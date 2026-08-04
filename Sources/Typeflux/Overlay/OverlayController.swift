@@ -253,7 +253,7 @@ enum OverlayFailureTone {
 }
 
 final class OverlayController {
-    private static let autoDismissDelay: TimeInterval = 6.0
+    static let noticeAutoDismissDelay: TimeInterval = 2.0
     private static let shadowGutter: CGFloat = 32
     private static let processingStatusLocalizationKey = "overlay.processing.thinking"
 
@@ -711,7 +711,7 @@ final class OverlayController {
         model.statusText = L("overlay.notice.title")
         model.detailText = message
         refreshWindow()
-        dismiss(after: Self.autoDismissDelay)
+        dismiss(after: Self.noticeAutoDismissDelay)
     }
 
     func showResultDialog(title: String, message: String) {

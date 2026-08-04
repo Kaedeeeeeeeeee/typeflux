@@ -2,6 +2,10 @@
 import XCTest
 
 final class OverlayControllerTests: XCTestCase {
+    func testNoticeAutoDismissDelayIsTwoSeconds() {
+        XCTAssertEqual(OverlayController.noticeAutoDismissDelay, 2.0)
+    }
+
     func testLiveTranscriptPreviewLayoutCapsVisibleTextToThreeLines() {
         XCTAssertEqual(LiveTranscriptPreviewLayout.maxVisibleLineCount, 3)
         XCTAssertEqual(
