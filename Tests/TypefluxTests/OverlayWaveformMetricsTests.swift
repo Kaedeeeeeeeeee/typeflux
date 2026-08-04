@@ -2,11 +2,13 @@
 import XCTest
 
 final class OverlayWaveformMetricsTests: XCTestCase {
-    func testSpeakingLevelsProduceNoticeablyTallerCenterBar() {
-        let quietHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0)
-        let speakingHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.2)
+    func testCenterBarPreservesVisibleDifferencesAcrossLevelRange() {
+        let quietHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.05)
+        let conversationalHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.5)
+        let loudHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.95)
 
-        XCTAssertGreaterThan(speakingHeight - quietHeight, 4.6)
+        XCTAssertGreaterThan(conversationalHeight - quietHeight, 5)
+        XCTAssertGreaterThan(loudHeight - conversationalHeight, 5)
     }
 
     func testLevelsClampToCapsuleWaveformBounds() {
@@ -15,7 +17,7 @@ final class OverlayWaveformMetricsTests: XCTestCase {
         let maximumHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 2)
 
         XCTAssertEqual(minimumHeight, zeroHeight, accuracy: 0.001)
-        XCTAssertEqual(maximumHeight, 15.0, accuracy: 0.001)
+        XCTAssertEqual(maximumHeight, 14.0, accuracy: 0.001)
     }
 
     func testProfileKeepsOuterBarsShorterThanCenter() {

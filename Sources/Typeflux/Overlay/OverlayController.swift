@@ -2685,6 +2685,7 @@ private struct OverlayButton: View {
 private struct LevelWaveform: View {
     let level: Float
     let activeColor: Color
+    @State private var displayedLevel: Float = 0
 
     var body: some View {
         HStack(alignment: .center, spacing: 2.2) {
@@ -2693,11 +2694,20 @@ private struct LevelWaveform: View {
                     .fill(activeColor)
                     .frame(
                         width: 2.3,
-                        height: OverlayWaveformMetrics.barHeight(for: index, level: level)
+                        height: OverlayWaveformMetrics.barHeight(for: index, level: displayedLevel)
                     )
                     .shadow(color: Color.black.opacity(0.34), radius: 1.6, x: 0, y: 0.6)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .onAppear {
+            displayedLevel = level
+        }
+        .onChange(of: level) { nextLevel in
+            let duration = nextLevel > displayedLevel ? 0.07 : 0.16
+            withAnimation(.easeOut(duration: duration)) {
+                displayedLevel = nextLevel
+            }
+        }
     }
 }

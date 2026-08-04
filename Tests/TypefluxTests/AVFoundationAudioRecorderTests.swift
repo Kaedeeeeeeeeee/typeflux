@@ -3,6 +3,27 @@ import AVFoundation
 import XCTest
 
 final class AVFoundationAudioRecorderTests: XCTestCase {
+    func testMeterLevelSuppressesNoiseAtAndBelowFloor() {
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -60), 0)
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -50), 0)
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -.infinity), 0)
+    }
+
+    func testMeterLevelSeparatesQuietConversationalAndLoudSpeech() {
+        let quiet = AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -40)
+        let conversational = AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -30)
+        let loud = AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -20)
+
+        XCTAssertGreaterThan(conversational - quiet, 0.25)
+        XCTAssertGreaterThan(loud - conversational, 0.25)
+    }
+
+    func testMeterLevelSaturatesAtUpperBound() {
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: -8), 1)
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: 0), 1)
+        XCTAssertEqual(AVFoundationAudioRecorder.normalizedMeterLevel(forPowerDB: .infinity), 1)
+    }
+
     func testValidateInputFormatAcceptsUsableMicrophoneFormat() throws {
         XCTAssertNoThrow(try AVFoundationAudioRecorder.validateInputFormat(channelCount: 1, sampleRate: 44100))
     }

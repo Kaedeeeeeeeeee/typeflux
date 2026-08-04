@@ -7,6 +7,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private static let silentInputRecoveryDelay: Duration = .milliseconds(1000)
     private static let silentInputRecoveryPeakPowerThreshold: Float = -58
     private static let audioStartupTimeout: DispatchTimeInterval = .seconds(5)
+    private static let meterNoiseFloorDB: Float = -50
+    private static let meterSaturationDB: Float = -8
 
     enum RecorderError: LocalizedError, Equatable {
         case inputDeviceUnavailable
@@ -518,7 +520,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 let monoBuffer = try makeMonoPCMBuffer(from: buffer)
                 let previewBuffer = clone(buffer: monoBuffer)
                 let inputPower = rmsPower(for: monoBuffer)
-                let normalizedLevel = normalizePower(inputPower)
+                let normalizedLevel = Self.normalizedMeterLevel(forPowerDB: inputPower)
 
                 stateCondition.lock()
                 peakInputPowerSinceStart = max(peakInputPowerSinceStart, inputPower)
@@ -657,10 +659,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         return 20 * log10(rms)
     }
 
-    private func normalizePower(_ power: Float) -> Float {
-        let minDb: Float = -60
-        let clamped = max(minDb, power)
-        return (clamped - minDb) / -minDb
+    static func normalizedMeterLevel(forPowerDB power: Float) -> Float {
+        guard power.isFinite else { return power > 0 ? 1 : 0 }
+
+        let clampedPower = min(meterSaturationDB, max(meterNoiseFloorDB, power))
+        let linearLevel = (clampedPower - meterNoiseFloorDB)
+            / (meterSaturationDB - meterNoiseFloorDB)
+
+        // Smoothstep suppresses room noise while retaining strong separation
+        // between quiet, conversational, and loud speech.
+        return linearLevel * linearLevel * (3 - (2 * linearLevel))
     }
 
     static func shouldRecoverSilentInput(
