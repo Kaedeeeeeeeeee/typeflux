@@ -560,6 +560,50 @@ final class AXTextInjectorTests: XCTestCase {
         )
     }
 
+    func testCanUseUnverifiedUnicodeInputForFrontmostEditableTarget() {
+        XCTAssertTrue(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: false,
+                elementIsEditable: true,
+                targetProcessID: 42,
+                frontmostProcessID: 42
+            )
+        )
+    }
+
+    func testCannotUseUnverifiedUnicodeInputWhenTargetIsNotFrontmost() {
+        XCTAssertFalse(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: false,
+                elementIsEditable: true,
+                targetProcessID: 42,
+                frontmostProcessID: 99
+            )
+        )
+    }
+
+    func testCannotUseUnverifiedUnicodeInputWhenElementIsNotEditable() {
+        XCTAssertFalse(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: false,
+                elementIsEditable: false,
+                targetProcessID: 42,
+                frontmostProcessID: 42
+            )
+        )
+    }
+
+    func testCannotUseUnverifiedUnicodeInputWhenVerifiedPathIsAvailable() {
+        XCTAssertFalse(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: true,
+                elementIsEditable: true,
+                targetProcessID: 42,
+                frontmostProcessID: 42
+            )
+        )
+    }
+
     func testEvaluateDirectInputVerificationSucceedsWhenTextChanges() {
         let before = CurrentInputTextSnapshot(
             processID: 42,
@@ -978,6 +1022,20 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         XCTAssertTrue(result)
+    }
+
+    func testUnverifiedUnicodeInputUsesHIDTap() {
+        XCTAssertEqual(
+            AXTextInjector.unicodeEventDispatchMethod(unverifiedInputAllowed: true),
+            .hidTap
+        )
+    }
+
+    func testVerifiedUnicodeInputUsesProcessScopedEvents() {
+        XCTAssertEqual(
+            AXTextInjector.unicodeEventDispatchMethod(unverifiedInputAllowed: false),
+            .postToPid
+        )
     }
 
     func testShouldActivateTargetBeforePasteReturnsTrueWhenFrontmostIsNil() {

@@ -74,6 +74,23 @@ extension AXTextInjector {
         return targetProcessID == snapshotProcessID
     }
 
+    static func canUseUnverifiedUnicodeInput(
+        verifiedInputAvailable: Bool,
+        elementIsEditable: Bool,
+        targetProcessID: pid_t?,
+        frontmostProcessID: pid_t?
+    ) -> Bool {
+        guard !verifiedInputAvailable, elementIsEditable else { return false }
+        guard let targetProcessID, let frontmostProcessID else { return false }
+        return targetProcessID == frontmostProcessID
+    }
+
+    static func unicodeEventDispatchMethod(
+        unverifiedInputAllowed: Bool
+    ) -> PasteDispatchMethod {
+        unverifiedInputAllowed ? .hidTap : .postToPid
+    }
+
     static func evaluateDirectInputVerification(
         targetProcessID: pid_t?,
         before: CurrentInputTextSnapshot,
@@ -162,13 +179,35 @@ extension AXTextInjector {
     func insertTextViaUnicodeEvents(
         _ text: String,
         targetProcessID: pid_t?,
-        beforeSnapshot: CurrentInputTextSnapshot
+        beforeSnapshot: CurrentInputTextSnapshot,
+        elementIsEditable: Bool
     ) throws -> Bool {
-        guard Self.canUseVerifiedUnicodeInput(
+        let verifiedInputAvailable = Self.canUseVerifiedUnicodeInput(
             snapshot: beforeSnapshot,
             targetProcessID: targetProcessID
+        )
+        let unverifiedInputAllowed = Self.canUseUnverifiedUnicodeInput(
+            verifiedInputAvailable: verifiedInputAvailable,
+            elementIsEditable: elementIsEditable,
+            targetProcessID: targetProcessID,
+            frontmostProcessID: frontmostProcessID()
+        )
+        guard verifiedInputAvailable || unverifiedInputAllowed else { return false }
+        let dispatchMethod = Self.unicodeEventDispatchMethod(
+            unverifiedInputAllowed: unverifiedInputAllowed
+        )
+        guard postUnicodeText(
+            text,
+            to: targetProcessID,
+            dispatchMethod: dispatchMethod
         ) else { return false }
-        guard postUnicodeText(text, to: targetProcessID) else { return false }
+
+        if unverifiedInputAllowed {
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] completed via Unicode keyboard events on AX-unreadable editable target"
+            )
+            return true
+        }
 
         var sawUnchangedValue = false
         for attempt in 0 ..< Self.axWriteVerificationAttempts {
@@ -208,10 +247,14 @@ extension AXTextInjector {
         return !sawUnchangedValue
     }
 
-    private func postUnicodeText(_ text: String, to targetProcessID: pid_t?) -> Bool {
+    private func postUnicodeText(
+        _ text: String,
+        to targetProcessID: pid_t?,
+        dispatchMethod: PasteDispatchMethod
+    ) -> Bool {
         let chunks = Self.unicodeEventChunks(for: text)
         guard !chunks.isEmpty else { return true }
-        guard let targetProcessID else { return false }
+        if dispatchMethod == .postToPid, targetProcessID == nil { return false }
 
         let source = CGEventSource(stateID: .combinedSessionState)
         for chunk in chunks {
@@ -231,8 +274,15 @@ extension AXTextInjector {
                     unicodeString: buffer.baseAddress
                 )
             }
-            keyDown.postToPid(targetProcessID)
-            keyUp.postToPid(targetProcessID)
+            switch dispatchMethod {
+            case .postToPid:
+                guard let targetProcessID else { return false }
+                keyDown.postToPid(targetProcessID)
+                keyUp.postToPid(targetProcessID)
+            case .hidTap:
+                keyDown.post(tap: .cghidEventTap)
+                keyUp.post(tap: .cghidEventTap)
+            }
         }
         return true
     }

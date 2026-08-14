@@ -166,7 +166,8 @@ extension AXTextInjector {
         return try insertTextViaUnicodeEvents(
             text,
             targetProcessID: frontmostProcessID(),
-            beforeSnapshot: beforeSnapshot
+            beforeSnapshot: beforeSnapshot,
+            elementIsEditable: isLikelyEditable(element: element)
         )
     }
 
