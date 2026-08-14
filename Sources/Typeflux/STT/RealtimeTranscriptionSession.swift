@@ -8,12 +8,6 @@ protocol RealtimeTranscriptionSession: AnyObject {
     func cancel() async
 }
 
-/// Exposes the optimize value actually used to create a realtime ASR session.
-/// A nil value means the provider does not support this request option.
-protocol RealtimeASROptimizeProviding: AnyObject {
-    var asrOptimize: Bool? { get }
-}
-
 protocol PCM16RealtimeTranscriptionSession: AnyObject {
     func start() async throws
     func appendPCM16(_ data: Data) async throws
@@ -117,7 +111,7 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession,
 
     private let upstream: any PCM16RealtimeTranscriptionSession
     private let encoder = RealtimePCM16AudioEncoder()
-    private var chunker = PCM16FrameChunker(chunkSize: CloudASRAudioConverter.chunkSize)
+    private var chunker = PCM16FrameChunker(chunkSize: PCM16AudioConverter.chunkSize)
     private var pendingChunks: [Data] = []
     private var state: State = .idle
     private var startTask: Task<Void, Error>?
@@ -280,7 +274,7 @@ struct PCM16FrameChunker {
 }
 
 final class RealtimePCM16AudioEncoder {
-    private let targetSampleRate = CloudASRAudioConverter.targetSampleRate
+    private let targetSampleRate = PCM16AudioConverter.targetSampleRate
     private var converter: AVAudioConverter?
     private var converterSourceFormat: AVAudioFormat?
 

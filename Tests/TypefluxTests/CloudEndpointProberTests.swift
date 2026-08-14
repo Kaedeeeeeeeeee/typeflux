@@ -16,7 +16,6 @@ final class CloudEndpointProberTests: XCTestCase {
             XCTAssertEqual(components.path, "/api/v1/ping")
             XCTAssertEqual(components.queryItems?.first(where: { $0.name == "nonce" })?.value, "abc-123")
             XCTAssertNotNil(request.value(forHTTPHeaderField: "User-Agent"))
-            XCTAssertNotNil(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientIDField))
         }
         ProberURLProtocol.responder = { request in
             let body = #"{"code":"OK","data":{"pong":true,"nonce":"abc-123","server_id":"s1","server_time_ms":1,"version":"v1"}}"#

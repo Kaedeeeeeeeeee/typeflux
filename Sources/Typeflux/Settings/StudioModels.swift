@@ -8,7 +8,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case models
     case agent
     case settings
-    case account
 
     var id: String {
         rawValue
@@ -33,7 +32,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.section.history")
         case .agent: L("studio.section.agent")
         case .settings: L("studio.section.settings")
-        case .account: L("studio.section.account")
         }
     }
 
@@ -46,7 +44,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: "clock.arrow.circlepath"
         case .agent: "puzzlepiece.extension"
         case .settings: "gearshape.fill"
-        case .account: "person.circle"
         }
     }
 
@@ -59,7 +56,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.eyebrow.history")
         case .agent: L("studio.eyebrow.agent")
         case .settings: L("studio.eyebrow.settings")
-        case .account: L("studio.eyebrow.account")
         }
     }
 
@@ -72,7 +68,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.heading.history")
         case .agent: L("studio.heading.agent")
         case .settings: L("studio.heading.settings")
-        case .account: L("studio.heading.account")
         }
     }
 
@@ -92,8 +87,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
             L("studio.subheading.agent")
         case .settings:
             nil
-        case .account:
-            nil
         }
     }
 
@@ -106,7 +99,6 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.search.history")
         case .agent: L("studio.search.agent")
         case .settings: L("studio.search.settings")
-        case .account: L("studio.search.account")
         }
     }
 }
@@ -171,8 +163,6 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case groqSTT
     case soniox
     case deepgram
-    case typefluxOfficial
-    case typefluxCloud
     case ollama
     case freeModel
     case customLLM
@@ -198,36 +188,24 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     var domain: StudioModelDomain {
         switch self {
         case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-             .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial:
+             .googleCloud, .groqSTT, .soniox, .deepgram:
             .stt
-        case .typefluxCloud, .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+        case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
              .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq, .openCodeZen, .openCodeGo:
             .llm
         }
     }
 
     var showsManualSaveButton: Bool {
-        switch self {
-        case .typefluxOfficial, .typefluxCloud:
-            false
-        default:
-            true
-        }
+        true
     }
 
     var requiresLoginForConnectionTest: Bool {
-        switch self {
-        case .typefluxOfficial, .typefluxCloud:
-            true
-        default:
-            false
-        }
+        false
     }
 
     var usesExpandedLogo: Bool {
         switch self {
-        case .typefluxOfficial, .typefluxCloud:
-            true
         case .openCodeZen, .openCodeGo:
             true
         default:
@@ -236,12 +214,7 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     }
 
     var usesTypefluxBranding: Bool {
-        switch self {
-        case .typefluxOfficial, .typefluxCloud:
-            true
-        default:
-            false
-        }
+        false
     }
 }
 

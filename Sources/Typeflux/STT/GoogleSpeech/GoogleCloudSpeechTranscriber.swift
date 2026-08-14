@@ -3,7 +3,7 @@ import GRPC
 import NIO
 import os
 
-final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber, RealtimeTranscriptionSessionFactory {
+final class GoogleCloudSpeechTranscriber: Transcriber, RealtimeTranscriptionSessionFactory {
     private let settingsStore: SettingsStore
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "GoogleCloudSpeechTranscriber")
 
@@ -11,9 +11,12 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber,
         self.settingsStore = settingsStore
     }
 
+    func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile) { _ in }
+    }
+
     func transcribeStream(
         audioFile: AudioFile,
-        scenario _: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let effectiveCredential = try await GoogleCloudSpeechCredentialResolver.resolveCredential(
@@ -27,7 +30,7 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber,
                 appLanguage: settingsStore.appLanguage
             )
         }
-        let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
+        let pcmData = try PCM16AudioConverter.convert(url: audioFile.fileURL)
         return try await GoogleCloudSpeechStreamingSession.run(
             pcmData: pcmData,
             configuration: configuration,
@@ -36,7 +39,6 @@ final class GoogleCloudSpeechTranscriber: TypefluxCloudScenarioAwareTranscriber,
     }
 
     func makeRealtimeTranscriptionSession(
-        scenario _: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession {
         let effectiveCredential = try await GoogleCloudSpeechCredentialResolver.resolveCredential(
@@ -293,13 +295,13 @@ enum GoogleCloudSpeechStreamingSession {
         configuration: GoogleCloudSpeechConfiguration
     ) -> [Google_Cloud_Speech_V2_StreamingRecognizeRequest] {
         var requests = [makeConfigRequest(configuration: configuration)]
-        requests.reserveCapacity(1 + Int(ceil(Double(pcmData.count) / Double(CloudASRAudioConverter.chunkSize))))
+        requests.reserveCapacity(1 + Int(ceil(Double(pcmData.count) / Double(PCM16AudioConverter.chunkSize))))
 
         var offset = pcmData.startIndex
         while offset < pcmData.endIndex {
             let end = pcmData.index(
                 offset,
-                offsetBy: CloudASRAudioConverter.chunkSize,
+                offsetBy: PCM16AudioConverter.chunkSize,
                 limitedBy: pcmData.endIndex
             ) ?? pcmData.endIndex
             var request = Google_Cloud_Speech_V2_StreamingRecognizeRequest()
@@ -316,7 +318,7 @@ enum GoogleCloudSpeechStreamingSession {
     ) -> Google_Cloud_Speech_V2_StreamingRecognizeRequest {
         var decodingConfig = Google_Cloud_Speech_V2_ExplicitDecodingConfig()
         decodingConfig.encoding = .linear16
-        decodingConfig.sampleRateHertz = Int32(CloudASRAudioConverter.targetSampleRate)
+        decodingConfig.sampleRateHertz = Int32(PCM16AudioConverter.targetSampleRate)
         decodingConfig.audioChannelCount = 1
 
         var recognitionConfig = Google_Cloud_Speech_V2_RecognitionConfig()

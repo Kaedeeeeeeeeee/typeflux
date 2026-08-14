@@ -1156,13 +1156,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     }
 
     @MainActor
-    func testLockedPersonaRewriteReusesRealtimeSessionWhenOptimizeDiffers() async {
+    func testLockedPersonaRewriteUsesRealtimeSession() async {
         let textInjector = MockProcessingTextInjector()
         let historyStore = MockProcessingHistoryStore()
-        let realtimeSession = MockOptimizeRealtimeSession(
-            optimize: true,
-            transcript: "incorrect realtime transcript"
-        )
+        let realtimeSession = MockRealtimeSession(transcript: "realtime transcript")
         let controller = makeWorkflowController(
             textInjector: textInjector,
             sttTranscriber: MockProcessingTranscriber(transcript: "batch transcript"),
@@ -1187,18 +1184,15 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let sessionCalls = await realtimeSession.callCounts()
         XCTAssertEqual(sessionCalls.finish, 1)
         XCTAssertEqual(sessionCalls.cancel, 0)
-        XCTAssertEqual(historyStore.list().last?.transcriptText, "incorrect realtime transcript")
+        XCTAssertEqual(historyStore.list().last?.transcriptText, "realtime transcript")
         XCTAssertEqual(textInjector.insertedTexts, ["persona rewrite"])
     }
 
     @MainActor
-    func testInputContextRewriteReusesRealtimeSessionWhenOptimizeDiffers() async {
+    func testInputContextRewriteUsesRealtimeSession() async {
         let textInjector = MockProcessingTextInjector()
         let historyStore = MockProcessingHistoryStore()
-        let realtimeSession = MockOptimizeRealtimeSession(
-            optimize: true,
-            transcript: "incorrect realtime transcript"
-        )
+        let realtimeSession = MockRealtimeSession(transcript: "realtime transcript")
         let controller = makeWorkflowController(
             textInjector: textInjector,
             sttTranscriber: MockProcessingTranscriber(transcript: "batch transcript"),
@@ -1233,7 +1227,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let sessionCalls = await realtimeSession.callCounts()
         XCTAssertEqual(sessionCalls.finish, 1)
         XCTAssertEqual(sessionCalls.cancel, 0)
-        XCTAssertEqual(historyStore.list().last?.transcriptText, "incorrect realtime transcript")
+        XCTAssertEqual(historyStore.list().last?.transcriptText, "realtime transcript")
         XCTAssertEqual(textInjector.insertedTexts, ["context rewrite"])
     }
 
@@ -1365,47 +1359,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTFail("Expected local model download failure status")
     }
 
-    @MainActor
-    func testPaidCreditExhaustedPromptIsSuppressedForOneHour() {
-        let controller = makeWorkflowController()
-        let error = TypefluxCloudBillingError(reason: .quotaExceeded, serverMessage: nil)
-        let firstPresentation = Date(timeIntervalSince1970: 1000)
-
-        XCTAssertTrue(controller.shouldPresentCloudBillingError(
-            error,
-            hasPaidSubscription: true,
-            now: firstPresentation
-        ))
-        XCTAssertFalse(controller.shouldPresentCloudBillingError(
-            error,
-            hasPaidSubscription: true,
-            now: firstPresentation.addingTimeInterval(30 * 60)
-        ))
-        XCTAssertTrue(controller.shouldPresentCloudBillingError(
-            error,
-            hasPaidSubscription: true,
-            now: firstPresentation.addingTimeInterval(60 * 60)
-        ))
-    }
-
-    @MainActor
-    func testFreeCreditExhaustedPromptIsNotSuppressed() {
-        let controller = makeWorkflowController()
-        let error = TypefluxCloudBillingError(reason: .quotaExceeded, serverMessage: nil)
-        let firstPresentation = Date(timeIntervalSince1970: 1000)
-
-        XCTAssertTrue(controller.shouldPresentCloudBillingError(
-            error,
-            hasPaidSubscription: false,
-            now: firstPresentation
-        ))
-        XCTAssertTrue(controller.shouldPresentCloudBillingError(
-            error,
-            hasPaidSubscription: false,
-            now: firstPresentation.addingTimeInterval(30 * 60)
-        ))
-    }
-
     private func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
         audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
@@ -1445,8 +1398,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 googleCloud: sttTranscriber,
                 groq: sttTranscriber,
                 soniox: sttTranscriber,
-                deepgram: sttTranscriber,
-                typefluxOfficial: sttTranscriber
+                deepgram: sttTranscriber
             ),
             llmService: llmService,
             llmAgentService: MockProcessingLLMAgentService(),
@@ -1550,51 +1502,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         return url
     }
 
-    func testTypefluxASROptimizeIsDisabledForPersonaRewrite() {
-        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.personaRewriteEnabled = true
-            settingsStore.personas += [persona]
-            settingsStore.activePersonaID = persona.id.uuidString
-        })
-
-        XCTAssertFalse(controller.shouldOptimizeTypefluxASR(
-            intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
-        ))
-    }
-
-    func testTypefluxASROptimizeIsEnabledForQuickInput() {
-        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-            settingsStore.personaRewriteEnabled = true
-            settingsStore.personas += [persona]
-            settingsStore.activePersonaID = persona.id.uuidString
-        })
-
-        XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
-            intent: .dictation,
-            recordingMode: .holdToTalk,
-            appName: nil,
-            bundleIdentifier: nil
-        ))
-    }
-
-    func testTypefluxASROptimizeIsEnabledWhenPersonaIsDisabled() {
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.personaRewriteEnabled = false
-        })
-
-        XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
-            intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
-        ))
-    }
 }
 
 private func XCTAssertThrowsErrorAsync(
@@ -2210,14 +2117,12 @@ private final class MockProcessingTranscriber: Transcriber {
     }
 }
 
-private actor MockOptimizeRealtimeSession: RealtimeTranscriptionSession, RealtimeASROptimizeProviding {
-    nonisolated let asrOptimize: Bool?
+private actor MockRealtimeSession: RealtimeTranscriptionSession {
     private let transcript: String
     private var finishCallCount = 0
     private var cancelCallCount = 0
 
-    init(optimize: Bool, transcript: String) {
-        asrOptimize = optimize
+    init(transcript: String) {
         self.transcript = transcript
     }
 

@@ -20,37 +20,8 @@ protocol RecordingPrewarmingTranscriber: Transcriber {
 
 protocol RealtimeTranscriptionSessionFactory: Transcriber {
     func makeRealtimeTranscriptionSession(
-        scenario: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession
-}
-
-/// Realtime factories that can choose between lower ASR latency and the
-/// provider's higher-quality recognition pass for each request.
-protocol OptimizeAwareRealtimeSessionFactory: RealtimeTranscriptionSessionFactory {
-    func makeRealtimeTranscriptionSession(
-        scenario: TypefluxCloudScenario,
-        optimize: Bool,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
-    ) async throws -> any RealtimeTranscriptionSession
-}
-
-protocol TypefluxCloudScenarioAwareTranscriber: Transcriber {
-    func transcribe(audioFile: AudioFile, scenario: TypefluxCloudScenario) async throws -> String
-    func transcribeStream(
-        audioFile: AudioFile,
-        scenario: TypefluxCloudScenario,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
-    ) async throws -> String
-}
-
-protocol ASROptimizeAwareTranscriber: TypefluxCloudScenarioAwareTranscriber {
-    func transcribeStream(
-        audioFile: AudioFile,
-        scenario: TypefluxCloudScenario,
-        optimize: Bool,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
-    ) async throws -> String
 }
 
 extension Transcriber {
@@ -61,27 +32,6 @@ extension Transcriber {
         let text = try await transcribe(audioFile: audioFile)
         await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
         return text
-    }
-}
-
-extension TypefluxCloudScenarioAwareTranscriber {
-    func transcribe(audioFile: AudioFile, scenario: TypefluxCloudScenario) async throws -> String {
-        try await transcribeStream(audioFile: audioFile, scenario: scenario) { _ in }
-    }
-
-    func transcribe(audioFile: AudioFile) async throws -> String {
-        try await transcribe(audioFile: audioFile, scenario: .voiceInput)
-    }
-
-    func transcribeStream(
-        audioFile: AudioFile,
-        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
-    ) async throws -> String {
-        try await transcribeStream(
-            audioFile: audioFile,
-            scenario: .voiceInput,
-            onUpdate: onUpdate
-        )
     }
 }
 
@@ -98,11 +48,7 @@ final class STTRouter {
     let groq: Transcriber
     let soniox: Transcriber
     let deepgram: Transcriber
-    let typefluxOfficial: Transcriber
-    let typefluxCloudLoginFallbackLocalModel: Transcriber?
     let autoModelDownloadService: AutoModelDownloadService?
-    let isTypefluxCloudLoggedIn: @Sendable () async -> Bool
-    let hasPaidTypefluxCloudSubscription: @Sendable () async -> Bool
 
     init(
         settingsStore: SettingsStore,
@@ -117,15 +63,7 @@ final class STTRouter {
         groq: Transcriber,
         soniox: Transcriber,
         deepgram: Transcriber,
-        typefluxOfficial: Transcriber,
-        typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
-        autoModelDownloadService: AutoModelDownloadService? = nil,
-        isTypefluxCloudLoggedIn: @escaping @Sendable () async -> Bool = {
-            await MainActor.run { AuthState.shared.isLoggedIn }
-        },
-        hasPaidTypefluxCloudSubscription: @escaping @Sendable () async -> Bool = {
-            await MainActor.run { AuthState.shared.subscription.hasPaidSubscription }
-        }
+        autoModelDownloadService: AutoModelDownloadService? = nil
     ) {
         self.settingsStore = settingsStore
         self.whisper = whisper
@@ -139,17 +77,10 @@ final class STTRouter {
         self.groq = groq
         self.soniox = soniox
         self.deepgram = deepgram
-        self.typefluxOfficial = typefluxOfficial
-        self.typefluxCloudLoginFallbackLocalModel = typefluxCloudLoginFallbackLocalModel
         self.autoModelDownloadService = autoModelDownloadService
-        self.isTypefluxCloudLoggedIn = isTypefluxCloudLoggedIn
-        self.hasPaidTypefluxCloudSubscription = hasPaidTypefluxCloudSubscription
     }
 
-    func transcribe(
-        audioFile: AudioFile,
-        scenario: TypefluxCloudScenario = .voiceInput
-    ) async throws -> String {
-        try await transcribeStream(audioFile: audioFile, scenario: scenario) { _ in }
+    func transcribe(audioFile: AudioFile) async throws -> String {
+        try await transcribeStream(audioFile: audioFile) { _ in }
     }
 }

@@ -28,14 +28,6 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
         XCTAssertFalse(store.isLLMConfigured)
     }
 
-    // MARK: - typefluxCloud
-
-    func testTypefluxCloudIsAlwaysConfigured() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-        XCTAssertTrue(store.isLLMConfigured)
-    }
-
     // MARK: - custom provider
 
     func testCustomProviderRequiresBaseURLAndModelButNotAPIKey() {
@@ -103,8 +95,7 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
     }
 
     func testApplyDefaultPersonaAppliesWhenLLMConfiguredAndNoPriorChoice() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
+        configureOpenAI()
 
         let applied = store.applyDefaultPersonaIfLLMConfigured()
 
@@ -119,8 +110,7 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
         store.applyPersonaSelection(nil)
         XCTAssertTrue(store.personaSelectionIsExplicit)
 
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
+        configureOpenAI()
 
         let applied = store.applyDefaultPersonaIfLLMConfigured()
 
@@ -133,8 +123,7 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
         let customID = UUID()
         store.applyPersonaSelection(customID)
 
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
+        configureOpenAI()
 
         let applied = store.applyDefaultPersonaIfLLMConfigured()
 
@@ -143,8 +132,7 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
     }
 
     func testApplyDefaultPersonaIsIdempotent() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
+        configureOpenAI()
 
         XCTAssertTrue(store.applyDefaultPersonaIfLLMConfigured())
         // Second call is a no-op because personaSelectionIsExplicit is now true.
@@ -157,6 +145,12 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
 
         store.applyPersonaSelection(UUID())
         XCTAssertTrue(store.personaSelectionIsExplicit)
+    }
+
+    private func configureOpenAI() {
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .openAI
+        store.setLLMAPIKey("sk-test", for: .openAI)
     }
 
     // MARK: - Ollama

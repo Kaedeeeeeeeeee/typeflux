@@ -7,34 +7,13 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
         self.settingsStore = settingsStore
     }
 
-    func resolveConnection(for config: SettingsStore.TextLLMConfiguration) async throws -> ResolvedLLMConnection {
-        if config.provider == .typefluxCloud {
-            let token = await MainActor.run { AuthState.shared.accessToken }
-            guard let token else {
-                throw TypefluxCloudLLMError.notLoggedIn
-            }
-            let primary = await CloudEndpointRegistry.shared.latencyOptimizedEndpoint()
-            return try LLMConnectionResolver.resolve(
-                provider: config.provider,
-                baseURL: "",
-                model: config.model,
-                apiKey: token,
-                typefluxCloudBaseURL: primary
-            )
-        }
-        return try LLMConnectionResolver.resolve(
+    func resolveConnection(for config: SettingsStore.TextLLMConfiguration) throws -> ResolvedLLMConnection {
+        try LLMConnectionResolver.resolve(
             provider: config.provider,
             baseURL: config.baseURL,
             model: config.model,
             apiKey: config.apiKey
         )
-    }
-
-    private func headers(
-        for connection: ResolvedLLMConnection,
-        scenario: TypefluxCloudScenario
-    ) -> [String: String] {
-        connection.headers(for: scenario)
     }
 
     func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {
@@ -63,27 +42,21 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
 
         return try await RequestRetry.perform(operationName: "LLM agent tool call") { [weak self] in
             guard let self else { throw CancellationError() }
-            let connection = try await resolveConnection(for: llmConfig)
-            let additionalHeaders = headers(for: connection, scenario: .askAnything)
-            let cloudBaseURL: URL? = (llmConfig.provider == .typefluxCloud)
-                ? await CloudEndpointRegistry.shared.latencyOptimizedEndpoint()
-                : nil
-            return try await Self.reportingFailures(cloudBaseURL: cloudBaseURL) {
-                try await RemoteAgentClient.runTool(
-                    provider: connection.provider,
-                    baseURL: connection.baseURL,
-                    model: connection.model,
-                    apiKey: connection.apiKey,
-                    additionalHeaders: additionalHeaders,
-                    request: LLMAgentRequest(
-                        systemPrompt: effectiveSystemPrompt,
-                        userPrompt: effectiveUserPrompt,
-                        tools: request.tools,
-                        forcedToolName: request.forcedToolName
-                    ),
-                    decoding: type
-                )
-            }
+            let connection = try resolveConnection(for: llmConfig)
+            return try await RemoteAgentClient.runTool(
+                provider: connection.provider,
+                baseURL: connection.baseURL,
+                model: connection.model,
+                apiKey: connection.apiKey,
+                additionalHeaders: connection.additionalHeaders,
+                request: LLMAgentRequest(
+                    systemPrompt: effectiveSystemPrompt,
+                    userPrompt: effectiveUserPrompt,
+                    tools: request.tools,
+                    forcedToolName: request.forcedToolName
+                ),
+                decoding: type
+            )
         }
     }
 
@@ -115,39 +88,20 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
 
         return try await RequestRetry.perform(operationName: "LLM phase 1 router call") { [weak self] in
             guard let self else { throw CancellationError() }
-            let connection = try await resolveConnection(for: llmConfig)
-            let additionalHeaders = headers(for: connection, scenario: .askAnything)
-            let cloudBaseURL: URL? = (llmConfig.provider == .typefluxCloud)
-                ? await CloudEndpointRegistry.shared.latencyOptimizedEndpoint()
-                : nil
-            return try await Self.reportingFailures(cloudBaseURL: cloudBaseURL) {
-                try await RemoteAgentClient.runAnyTool(
-                    provider: connection.provider,
-                    baseURL: connection.baseURL,
-                    model: connection.model,
-                    apiKey: connection.apiKey,
-                    additionalHeaders: additionalHeaders,
-                    request: LLMAgentRequest(
-                        systemPrompt: effectiveSystemPrompt,
-                        userPrompt: effectiveUserPrompt,
-                        tools: request.tools,
-                        forcedToolName: request.forcedToolName
-                    )
+            let connection = try resolveConnection(for: llmConfig)
+            return try await RemoteAgentClient.runAnyTool(
+                provider: connection.provider,
+                baseURL: connection.baseURL,
+                model: connection.model,
+                apiKey: connection.apiKey,
+                additionalHeaders: connection.additionalHeaders,
+                request: LLMAgentRequest(
+                    systemPrompt: effectiveSystemPrompt,
+                    userPrompt: effectiveUserPrompt,
+                    tools: request.tools,
+                    forcedToolName: request.forcedToolName
                 )
-            }
-        }
-    }
-
-    static func reportingFailures<T>(cloudBaseURL: URL?, operation: () async throws -> T) async throws -> T {
-        do {
-            return try await operation()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            if let cloudBaseURL {
-                await CloudEndpointRegistry.shared.reportFailure(cloudBaseURL, error: error)
-            }
-            throw error
+            )
         }
     }
 }

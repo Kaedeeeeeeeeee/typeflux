@@ -7,8 +7,8 @@ extension OpenAICompatibleAgentService: LLMMultiTurnService {
         config: LLMCallConfig
     ) async throws -> AgentTurnResult {
         let llmConfig = settingsStore.textLLMConfiguration()
-        let connection = try await resolveConnection(for: llmConfig)
-        let additionalHeaders = connection.headers(for: .askAnything)
+        let connection = try resolveConnection(for: llmConfig)
+        let additionalHeaders = connection.additionalHeaders
 
         return try await RequestRetry.perform(operationName: "LLM multi-turn complete") {
             switch connection.provider.apiStyle {

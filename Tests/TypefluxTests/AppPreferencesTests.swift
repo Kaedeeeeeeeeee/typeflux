@@ -26,7 +26,6 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(
             STTProvider.settingsDisplayOrder,
             [
-                .typefluxOfficial,
                 .freeModel,
                 .localModel,
                 .soniox,
@@ -41,11 +40,8 @@ final class AppPreferencesTests: XCTestCase {
         )
     }
 
-    func testSTTProviderOnboardingDisplayOrderExcludesHiddenTypefluxCloudProvider() {
-        XCTAssertFalse(STTProvider.onboardingDisplayOrder.contains(.typefluxOfficial))
-
-        let expected = STTProvider.settingsDisplayOrder.filter { $0 != .typefluxOfficial }
-        XCTAssertEqual(STTProvider.onboardingDisplayOrder, expected)
+    func testSTTProviderOnboardingDisplayOrderMatchesSettings() {
+        XCTAssertEqual(STTProvider.onboardingDisplayOrder, STTProvider.settingsDisplayOrder)
     }
 
     func testMultimodalLLMHandlesPersonaInternally() {

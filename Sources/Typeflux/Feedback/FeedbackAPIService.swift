@@ -72,7 +72,7 @@ enum FeedbackAPIError: LocalizedError, Equatable {
         case let .networkError(message):
             message
         case let .serverError(code, message):
-            TypefluxCloudServerErrorMessage.userMessage(
+            ServerErrorMessage.userMessage(
                 code: code,
                 message: message,
                 fallback: L("feedback.error.server")
@@ -92,7 +92,6 @@ enum FeedbackAPIService {
         content: String,
         contact: String?,
         imageURLs: [String] = [],
-        token: String? = nil,
         executor: CloudRequestExecutor = CloudRequestExecutor()
     ) async throws -> FeedbackSubmissionResponse {
         let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -117,13 +116,10 @@ enum FeedbackAPIService {
         let httpResponse: HTTPURLResponse
         do {
             (data, httpResponse) = try await executor.execute(apiPath: "/api/v1/feedback") { baseURL in
-                let url = AuthEndpointResolver.resolve(baseURL: baseURL, path: "/api/v1/feedback")
+                let url = CloudEndpointURLResolver.resolve(baseURL: baseURL, path: "/api/v1/feedback")
                 var urlRequest = URLRequest(url: url)
                 urlRequest.httpMethod = "POST"
                 urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                if let token, !token.isEmpty {
-                    urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                }
                 urlRequest.httpBody = payload
                 urlRequest.timeoutInterval = 30
                 return urlRequest
@@ -170,7 +166,6 @@ enum FeedbackAPIService {
         filename: String,
         contentType: String,
         sizeBytes: Int64,
-        token: String? = nil,
         executor: CloudRequestExecutor = CloudRequestExecutor()
     ) async throws -> FeedbackUploadTarget {
         let request = FeedbackUploadPresignRequest(
@@ -190,13 +185,13 @@ enum FeedbackAPIService {
         let httpResponse: HTTPURLResponse
         do {
             (data, httpResponse) = try await executor.execute(apiPath: "/api/v1/feedback/uploads/presign") { baseURL in
-                let url = AuthEndpointResolver.resolve(baseURL: baseURL, path: "/api/v1/feedback/uploads/presign")
+                let url = CloudEndpointURLResolver.resolve(
+                    baseURL: baseURL,
+                    path: "/api/v1/feedback/uploads/presign"
+                )
                 var urlRequest = URLRequest(url: url)
                 urlRequest.httpMethod = "POST"
                 urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                if let token, !token.isEmpty {
-                    urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                }
                 urlRequest.httpBody = payload
                 urlRequest.timeoutInterval = 30
                 return urlRequest

@@ -7,11 +7,10 @@ import SwiftUI
 final class OnboardingViewModel: ObservableObject {
     enum Step: Int, CaseIterable {
         case language = 0
-        case account = 1
-        case stt = 2
-        case llm = 3
-        case permissions = 4
-        case shortcuts = 5
+        case stt = 1
+        case llm = 2
+        case permissions = 3
+        case shortcuts = 4
     }
 
     enum ConnectionTestState: Equatable {
@@ -44,11 +43,10 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 
-    static let orderedSteps: [Step] = [.language, .account, .stt, .llm, .permissions, .shortcuts]
+    static let orderedSteps: [Step] = [.language, .stt, .llm, .permissions, .shortcuts]
 
     @Published var currentStep: Step = .language
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
-    @Published private(set) var useCloudAccountModels: Bool
 
     /// Language
     @Published var appLanguage: AppLanguage
@@ -109,42 +107,31 @@ final class OnboardingViewModel: ObservableObject {
     @Published var showShortcutReplacementAppliedAlert = false
 
     private let settingsStore: SettingsStore
-    private let authState: AuthState
     private let globeKeyReader: GlobeKeyPreferenceReading
     private let localModelManager: (any LocalSTTModelManaging)?
     private let notificationService: LocalNotificationSending
     let onComplete: () -> Void
-    private var cloudAccountModelDefaultsObserver: NSObjectProtocol?
     private var localSTTPreparationTask: Task<Void, Never>?
     private var localSTTPreparationModel: LocalSTTModel?
 
     init(
         settingsStore: SettingsStore,
-        authState: AuthState? = nil,
         globeKeyReader: GlobeKeyPreferenceReading = SystemGlobeKeyPreferenceReader(),
         localModelManager: (any LocalSTTModelManaging)? = nil,
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onComplete: @escaping () -> Void
     ) {
         self.settingsStore = settingsStore
-        let resolvedAuthState = authState ?? .shared
-        self.authState = resolvedAuthState
         self.globeKeyReader = globeKeyReader
         self.localModelManager = localModelManager
         self.notificationService = notificationService
         self.onComplete = onComplete
-        let initialUseCloudAccountModels = resolvedAuthState.isLoggedIn
-            && settingsStore.sttProvider == .typefluxOfficial
-            && settingsStore.llmProvider == .openAICompatible
-            && settingsStore.llmRemoteProvider == .typefluxCloud
-        useCloudAccountModels = initialUseCloudAccountModels
-
         appLanguage = settingsStore.appLanguage
         sttProvider = {
             let p = settingsStore.sttProvider
             // Never show providers that are hidden from onboarding model selection.
             return switch p {
-            case .appleSpeech, .typefluxOfficial:
+            case .appleSpeech:
                 STTProvider.defaultProvider
             default:
                 p
@@ -174,11 +161,7 @@ final class OnboardingViewModel: ObservableObject {
         deepgramLanguage = settingsStore.deepgramLanguage
 
         let initialLLMProvider = settingsStore.llmProvider
-        let storedRemoteProvider = settingsStore.llmRemoteProvider
-        let shouldHideStoredCloudProvider = !initialUseCloudAccountModels
-            && initialLLMProvider == .openAICompatible
-            && storedRemoteProvider == .typefluxCloud
-        let initialRemoteProvider: LLMRemoteProvider = shouldHideStoredCloudProvider ? .custom : storedRemoteProvider
+        let initialRemoteProvider = settingsStore.llmRemoteProvider
         llmProvider = initialLLMProvider
         llmRemoteProvider = initialRemoteProvider
         llmBaseURL = settingsStore.llmBaseURL(for: initialRemoteProvider)
@@ -199,22 +182,9 @@ final class OnboardingViewModel: ObservableObject {
             activationHotkey: storedActivationHotkey,
             askHotkey: storedAskHotkey
         )
-
-        cloudAccountModelDefaultsObserver = NotificationCenter.default.addObserver(
-            forName: .cloudAccountModelDefaultsDidApply,
-            object: settingsStore,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.syncCloudAccountModelsFromStore()
-            }
-        }
     }
 
     deinit {
-        if let cloudAccountModelDefaultsObserver {
-            NotificationCenter.default.removeObserver(cloudAccountModelDefaultsObserver)
-        }
         localSTTPreparationTask?.cancel()
     }
 
@@ -227,9 +197,6 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var visibleSteps: [Step] {
-        if useCloudAccountModels {
-            return Self.orderedSteps.filter { $0 != .stt && $0 != .llm }
-        }
         if sttProvider == .multimodalLLM {
             return Self.orderedSteps.filter { $0 != .llm }
         }
@@ -240,14 +207,14 @@ final class OnboardingViewModel: ObservableObject {
         switch currentStep {
         case .language, .permissions:
             true
-        case .account, .stt, .llm, .shortcuts:
+        case .stt, .llm, .shortcuts:
             false
         }
     }
 
     var isSTTConfigurationComplete: Bool {
         switch sttProvider {
-        case .localModel, .appleSpeech, .typefluxOfficial:
+        case .localModel, .appleSpeech:
             true
         case .freeModel:
             hasText(freeSTTModel)
@@ -276,8 +243,6 @@ final class OnboardingViewModel: ObservableObject {
             hasText(ollamaBaseURL) && hasText(ollamaModel)
         case .openAICompatible:
             switch llmRemoteProvider {
-            case .typefluxCloud:
-                authState.isLoggedIn
             case .freeModel:
                 hasText(llmModel)
             case .custom:
@@ -347,17 +312,6 @@ final class OnboardingViewModel: ObservableObject {
     func skipWithoutAnimation() {
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
-    }
-
-    func useCloudAccountModelsAndContinue() {
-        guard authState.isLoggedIn else { return }
-        syncCloudAccountModelsFromStore()
-        advance()
-    }
-
-    func continueWithoutCloudAccount() {
-        useCloudAccountModels = false
-        advance()
     }
 
     func skipIncompleteLLMConfiguration() {
@@ -477,7 +431,7 @@ final class OnboardingViewModel: ObservableObject {
                         )
                     case .freeModel:
                         preview = try await FreeSTTTranscriber.testConnection(modelName: freeModel)
-                    case .localModel, .appleSpeech, .typefluxOfficial:
+                    case .localModel, .appleSpeech:
                         preview = ""
                     }
                     return preview
@@ -550,7 +504,7 @@ final class OnboardingViewModel: ObservableObject {
                             baseURL: connection.baseURL,
                             model: connection.model,
                             apiKey: connection.apiKey,
-                            additionalHeaders: connection.headers(for: .modelSetup)
+                            additionalHeaders: connection.additionalHeaders
                         )
                     }
                 }
@@ -632,17 +586,6 @@ final class OnboardingViewModel: ObservableObject {
         case .language:
             settingsStore.appLanguage = appLanguage
             AppLocalization.shared.setLanguage(appLanguage)
-        case .account:
-            guard useCloudAccountModels else { return }
-            sttProvider = .typefluxOfficial
-            llmProvider = .openAICompatible
-            llmRemoteProvider = .typefluxCloud
-            llmBaseURL = settingsStore.llmBaseURL(for: .typefluxCloud)
-            llmModel = settingsStore.llmModel(for: .typefluxCloud)
-            llmAPIKey = settingsStore.llmAPIKey(for: .typefluxCloud)
-            settingsStore.sttProvider = .typefluxOfficial
-            settingsStore.llmProvider = .openAICompatible
-            settingsStore.llmRemoteProvider = .typefluxCloud
         case .stt:
             settingsStore.sttProvider = sttProvider
             switch sttProvider {
@@ -679,7 +622,7 @@ final class OnboardingViewModel: ObservableObject {
                 settingsStore.deepgramAPIKey = deepgramAPIKey
                 settingsStore.deepgramModel = deepgramModel
                 settingsStore.deepgramLanguage = deepgramLanguage
-            case .appleSpeech, .typefluxOfficial:
+            case .appleSpeech:
                 break
             }
         case .llm:
@@ -696,21 +639,6 @@ final class OnboardingViewModel: ObservableObject {
         case .permissions, .shortcuts:
             break
         }
-    }
-
-    private func syncCloudAccountModelsFromStore() {
-        useCloudAccountModels = true
-        sttProvider = .typefluxOfficial
-        llmProvider = .openAICompatible
-        llmRemoteProvider = .typefluxCloud
-        llmBaseURL = settingsStore.llmBaseURL(for: .typefluxCloud)
-        llmModel = settingsStore.llmModel(for: .typefluxCloud)
-        llmAPIKey = settingsStore.llmAPIKey(for: .typefluxCloud)
-        settingsStore.sttProvider = .typefluxOfficial
-        settingsStore.llmProvider = .openAICompatible
-        settingsStore.llmRemoteProvider = .typefluxCloud
-        sttConnectionTestState = .idle
-        llmConnectionTestState = .idle
     }
 
     private func complete() {

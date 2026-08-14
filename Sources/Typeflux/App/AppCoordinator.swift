@@ -7,8 +7,6 @@ final class AppCoordinator {
     private var statusBarController: StatusBarController?
     private var workflowController: WorkflowController?
     private var onboardingWindowController: OnboardingWindowController?
-    private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
-    private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
 
     static func initialStudioSection(isOnboardingCompleted _: Bool) -> StudioSection {
         .home
@@ -41,11 +39,7 @@ final class AppCoordinator {
                 localBackendFactory: {
                     LocalModelLivePreviewBackend(
                         transcriberFactory: {
-                            if settingsStore.sttProvider == .typefluxOfficial {
-                                return self.di.autoModelDownloadService.makeTranscriberIfReady()
-                                    ?? UnavailableTranscriber(providerName: "Typeflux Cloud local optimization model")
-                            }
-                            return LocalModelTranscriber(
+                            LocalModelTranscriber(
                                 settingsStore: settingsStore,
                                 modelManager: localModelManager
                             )
@@ -90,9 +84,6 @@ final class AppCoordinator {
         di.autoModelDownloadService.triggerIfNeeded()
         AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
-        cloudEndpointProbeScheduler.start()
-        asrPublicConfigRefreshScheduler.start()
-        Task { await AuthState.shared.refreshTokenIfNeeded() }
 
         presentStudio(
             initialSection: Self.initialStudioSection(
@@ -102,8 +93,6 @@ final class AppCoordinator {
     }
 
     func stop() {
-        cloudEndpointProbeScheduler.stop()
-        asrPublicConfigRefreshScheduler.stop()
         workflowController?.stop()
         statusBarController?.stop()
     }

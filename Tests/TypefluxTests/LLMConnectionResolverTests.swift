@@ -210,39 +210,7 @@ extension LLMConnectionResolverTests {
         XCTAssertEqual(connection.model, "llama3")
     }
 
-    func testTypefluxCloudHeadersIncludeScenario() throws {
-        let connection = try ResolvedLLMConnection(
-            provider: .typefluxCloud,
-            baseURL: XCTUnwrap(URL(string: "https://api.typeflux.dev/api/v1")),
-            model: "default",
-            apiKey: "token",
-            additionalHeaders: ["x-request-id": "req-1"]
-        )
-
-        let headers = connection.headers(for: .askAnything)
-
-        XCTAssertEqual(headers["x-request-id"], "req-1")
-        XCTAssertEqual(headers[TypefluxCloudRequestHeaders.scenarioField], TypefluxCloudScenario.askAnything.rawValue)
-    }
-
-    func testTypefluxCloudHeadersIncludePersonaIDWhenProvided() throws {
-        let personaID = try XCTUnwrap(UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA001"))
-        let connection = try ResolvedLLMConnection(
-            provider: .typefluxCloud,
-            baseURL: XCTUnwrap(URL(string: "https://api.typeflux.dev/api/v1")),
-            model: "default",
-            apiKey: "token",
-            additionalHeaders: ["x-request-id": "req-1"]
-        )
-
-        let headers = connection.headers(for: .textRewrite, personaID: personaID)
-
-        XCTAssertEqual(headers["x-request-id"], "req-1")
-        XCTAssertEqual(headers[TypefluxCloudRequestHeaders.scenarioField], TypefluxCloudScenario.textRewrite.rawValue)
-        XCTAssertEqual(headers[TypefluxCloudRequestHeaders.personaIDField], personaID.uuidString)
-    }
-
-    func testNonTypefluxCloudHeadersDoNotInjectScenario() throws {
+    func testResolvedConnectionPreservesAdditionalHeaders() throws {
         let connection = try ResolvedLLMConnection(
             provider: .openAI,
             baseURL: XCTUnwrap(URL(string: "https://api.openai.com/v1")),
@@ -251,11 +219,7 @@ extension LLMConnectionResolverTests {
             additionalHeaders: ["x-request-id": "req-1"]
         )
 
-        let headers = connection.headers(for: .askAnything)
-
-        XCTAssertEqual(headers["x-request-id"], "req-1")
-        XCTAssertNil(headers[TypefluxCloudRequestHeaders.scenarioField])
-        XCTAssertNil(headers[TypefluxCloudRequestHeaders.personaIDField])
+        XCTAssertEqual(connection.additionalHeaders["x-request-id"], "req-1")
     }
 
     // MARK: - Free model whitespace handling

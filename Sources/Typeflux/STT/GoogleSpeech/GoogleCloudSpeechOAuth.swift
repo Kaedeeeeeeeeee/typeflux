@@ -123,7 +123,7 @@ enum GoogleCloudSpeechCredentialResolver {
         clientSecret: String = AppServerConfiguration.googleCloudOAuthClientSecret,
         tokenLoader: TokenLoader = GoogleCloudSpeechOAuthTokenStore.load,
         tokenSaver: TokenSaver = GoogleCloudSpeechOAuthTokenStore.save,
-        tokenRefresher: TokenRefresher = GoogleOAuthService.refreshAccessToken
+        tokenRefresher: TokenRefresher = GoogleCloudSpeechOAuthAuthorizer.refreshAccessToken
     ) async throws -> String {
         let trimmedManualCredential = manualCredential.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedManualCredential.isEmpty {

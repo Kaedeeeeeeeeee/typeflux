@@ -423,7 +423,7 @@ private final class SingleAudioProcessor {
             "Transcribing \(config.audioURL.lastPathComponent) with \(sttModelDescription(settingsStore: settingsStore))"
         )
         let sttStartedAt = Date()
-        let transcript = try await sttRouter.transcribeStream(audioFile: audioFile, scenario: .voiceInput) { _ in }
+        let transcript = try await sttRouter.transcribeStream(audioFile: audioFile) { _ in }
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let sttMilliseconds = milliseconds(since: sttStartedAt)
 
@@ -523,7 +523,7 @@ private final class SingleAudioProcessor {
             defaults.set(model, forKey: "stt.soniox.model")
         case .deepgram:
             defaults.set(model, forKey: "stt.deepgram.model")
-        case .appleSpeech, .aliCloud, .typefluxOfficial:
+        case .appleSpeech, .aliCloud:
             throw BatchCommandError(message: "--stt-model is not supported for provider \(provider.rawValue).")
         }
     }
@@ -547,11 +547,7 @@ private final class SingleAudioProcessor {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
-            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
-            typefluxOfficial: TypefluxOfficialTranscriber(),
-            typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
-                modelManager: localModelManager
-            )
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore)
         )
     }
 
@@ -669,8 +665,6 @@ private final class SingleAudioProcessor {
             settingsStore.sonioxModel
         case .deepgram:
             settingsStore.deepgramModel
-        case .typefluxOfficial:
-            "default"
         }
     }
 
@@ -765,7 +759,7 @@ private final class WAVPersonaBenchmark {
 
                     let startedAt = Date()
                     let transcript = try await sttRouter
-                        .transcribeStream(audioFile: audioFile, scenario: .voiceInput) { _ in }
+                        .transcribeStream(audioFile: audioFile) { _ in }
                     record.sttMilliseconds = milliseconds(since: startedAt)
                     record.transcript = transcript
                     record.status = .transcribed
@@ -864,11 +858,7 @@ private final class WAVPersonaBenchmark {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
-            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
-            typefluxOfficial: TypefluxOfficialTranscriber(),
-            typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
-                modelManager: localModelManager
-            )
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore)
         )
     }
 
@@ -1104,8 +1094,6 @@ private final class WAVPersonaBenchmark {
             settingsStore.sonioxModel
         case .deepgram:
             settingsStore.deepgramModel
-        case .typefluxOfficial:
-            "default"
         }
     }
 

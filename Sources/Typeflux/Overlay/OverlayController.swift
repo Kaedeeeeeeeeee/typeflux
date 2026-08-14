@@ -249,7 +249,6 @@ struct OverlayFailureAction {
 
 enum OverlayFailureTone {
     case error
-    case billing
 }
 
 final class OverlayController {
@@ -1725,21 +1724,11 @@ private struct OverlayView: View {
     }
 
     private var failureIcon: String {
-        switch model.failureTone {
-        case .error:
-            "exclamationmark.circle"
-        case .billing:
-            "creditcard.circle"
-        }
+        "exclamationmark.circle"
     }
 
     private var failureAccent: Color {
-        switch model.failureTone {
-        case .error:
-            Color(red: 1.0, green: 0.56, blue: 0.28)
-        case .billing:
-            Color(red: 0.34, green: 0.70, blue: 1.0)
-        }
+        Color(red: 1.0, green: 0.56, blue: 0.28)
     }
 
     @ViewBuilder
@@ -1747,7 +1736,7 @@ private struct OverlayView: View {
         switch style {
         case .primary:
             RoundedRectangle(cornerRadius: 8).fill(
-                failureAccent.opacity(model.failureTone == .billing ? 0.62 : 0.48)
+                failureAccent.opacity(0.48)
             )
         case .secondary:
             RoundedRectangle(cornerRadius: 8)

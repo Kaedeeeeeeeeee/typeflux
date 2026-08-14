@@ -24,17 +24,9 @@ extension WorkflowController {
         let completedAt: Date
     }
 
-    struct MergedCloudTranscriptionResult {
-        let transcript: String
-        let rewritten: String?
-        let llmStartedAt: Date?
-        let llmFirstOutputAt: Date?
-        let llmCompletedAt: Date?
-    }
-
     var shouldSuppressPostRecordingStreamingPreviewForCurrentSTTProvider: Bool {
         switch settingsStore.sttProvider {
-        case .aliCloud, .doubaoRealtime, .googleCloud, .soniox, .typefluxOfficial:
+        case .aliCloud, .doubaoRealtime, .googleCloud, .soniox:
             true
         default:
             false
@@ -678,52 +670,18 @@ extension WorkflowController {
                 && !(askContextText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             let multimodalHandlesPersona = settingsStore.sttProvider.handlesPersonaInternally
                 && (selectedText == nil || selectedText!.isEmpty)
-            let hasRewritePersona = Self.hasRewritePersona(personaPrompt)
             let hasInputContext = inputContext?.hasContent == true
             let shouldRewriteTranscript = Self.shouldRewriteTranscript(
                 personaPrompt: personaPrompt,
                 inputContext: inputContext
             )
-            let expectedASROptimize = !shouldRewriteTranscript
             let usableRealtimeTranscriptionSession = realtimeTranscriptionSession
-            if let actualASROptimize = (realtimeTranscriptionSession as?
-                any RealtimeASROptimizeProviding)?.asrOptimize {
-                let action = actualASROptimize == expectedASROptimize
-                    ? "reuse_realtime"
-                    : "reuse_realtime_mismatch"
-                NetworkDebugLogger.logMessage(
-                    "[ASR Timing][client] phase=optimize_decision action=\(action) " +
-                        "requested_optimize=\(actualASROptimize) expected_optimize=\(expectedASROptimize) " +
-                        "rewrite_required=\(shouldRewriteTranscript) replay_audio=false"
-                )
-            }
             pipelineTiming.transcriptionStartedAt = Date()
             record.pipelineTiming = pipelineTiming
             saveHistoryRecord(record)
             logPipelineEvent("transcription-started", for: record)
 
-            let cloudScenario: TypefluxCloudScenario = switch recordingIntent {
-            case .dictation:
-                .voiceInput
-            case .askSelection:
-                .askAnything
-            }
-
-            // Use merged ASR+LLM path when both providers are Typeflux Cloud and
-            // a persona rewrite is needed. The server will run the LLM after
-            // transcription and stream results back over the same WebSocket.
-            let canMergeWithLLM = settingsStore.sttProvider == .typefluxOfficial
-                && settingsStore.llmRemoteProvider == .typefluxCloud
-                && recordingIntent == .dictation
-                && !multimodalHandlesPersona
-                && inputContext == nil
-                && hasRewritePersona
-
             let rawTranscribedText: String
-            var mergedLLMResult: String?
-            var mergedLLMStartedAt: Date?
-            var mergedLLMFirstOutputAt: Date?
-            var mergedLLMCompletedAt: Date?
             let fallbackPreviewText = recordingPreviewText.trimmingCharacters(in: .whitespacesAndNewlines)
 
             let transcriptionStartedAt = Date()
@@ -745,34 +703,14 @@ extension WorkflowController {
                             error: error
                         )
                         rawTranscribedText = try await sttRouter.transcribeStream(
-                            audioFile: audioFile,
-                            scenario: cloudScenario,
-                            optimize: !shouldRewriteTranscript
+                            audioFile: audioFile
                         ) { _ in }
                     }
                 }
-            } else if canMergeWithLLM,
-                      let resolvedPersonaPrompt = personaPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
-                      !resolvedPersonaPrompt.isEmpty {
-                let mergedResult = try await performMergedCloudTranscription(
-                    audioFile: audioFile,
-                    personaPrompt: resolvedPersonaPrompt,
-                    personaID: personaID,
-                    selectionSnapshot: selectionSnapshot,
-                    cloudScenario: cloudScenario,
-                    sessionID: sessionID
-                )
-                rawTranscribedText = mergedResult.transcript
-                mergedLLMResult = mergedResult.rewritten
-                mergedLLMStartedAt = mergedResult.llmStartedAt
-                mergedLLMFirstOutputAt = mergedResult.llmFirstOutputAt
-                mergedLLMCompletedAt = mergedResult.llmCompletedAt
             } else {
                 do {
                     rawTranscribedText = try await sttRouter.transcribeStream(
-                        audioFile: audioFile,
-                        scenario: cloudScenario,
-                        optimize: !shouldRewriteTranscript
+                        audioFile: audioFile
                     ) { _ in }
                 } catch {
                     guard Self.shouldUseRecordingPreviewOnTranscriptionFailure(error),
@@ -818,10 +756,7 @@ extension WorkflowController {
                     """
                 )
             }
-            pipelineTiming.transcriptionCompletedAt = mergedLLMStartedAt ?? Date()
-            pipelineTiming.llmProcessingStartedAt = mergedLLMStartedAt
-            pipelineTiming.llmFirstOutputAt = mergedLLMFirstOutputAt
-            pipelineTiming.llmProcessingCompletedAt = mergedLLMCompletedAt
+            pipelineTiming.transcriptionCompletedAt = Date()
             record.pipelineTiming = pipelineTiming
             record.transcriptText = transcribedText
             record.transcriptionStatus = .succeeded
@@ -874,7 +809,6 @@ extension WorkflowController {
                     selectionSnapshot: selectionSnapshot,
                     inputContext: inputContext,
                     multimodalHandlesPersona: multimodalHandlesPersona && !hasInputContext,
-                    mergedLLMResult: mergedLLMResult,
                     sessionID: sessionID,
                     record: &record,
                     pipelineTiming: &pipelineTiming
@@ -899,14 +833,6 @@ extension WorkflowController {
             logPipelineEvent("pipeline-completed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
-            if await shouldShowTypefluxCloudASRLoginFallbackNotice() {
-                let isAlreadyPreservingNotice = await MainActor.run {
-                    self.shouldPreserveLLMConfigurationNotice
-                }
-                if !isAlreadyPreservingNotice {
-                    await presentLLMNotConfigured(.notConfigured(reason: .cloudNotLoggedIn))
-                }
-            }
             let retryResultText = forceResultDialogOnSuccess ? record.finalText : nil
             let finalMode = record.mode
             let finalTranscriptText = record.transcriptText
@@ -947,23 +873,6 @@ extension WorkflowController {
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
-        } catch let error as TypefluxCloudLoginRequiredError {
-            let message = error.localizedDescription
-            ErrorLogStore.shared.log("Processing skipped because Typeflux Cloud login is required: \(message)")
-            markFailure(&record, message: message)
-            saveHistoryRecord(record)
-            logPipelineEvent("pipeline-failed", for: record)
-            UsageStatsStore.shared.recordSession(record: record)
-            enforceHistoryRetentionPolicy()
-            let shouldPresentLogin = await MainActor.run {
-                guard self.processingSessionID == sessionID else { return false }
-                self.lastRetryableFailureRecord = nil
-                self.appState.setStatus(.failed(message: message))
-                return true
-            }
-            if shouldPresentLogin {
-                await presentTypefluxCloudLoginRequired()
-            }
         } catch is CancellationError {
             markCancelled(&record)
             saveHistoryRecord(record)
@@ -989,26 +898,6 @@ extension WorkflowController {
                 return
             }
 
-            if let loginRequiredError = TypefluxCloudLoginRequiredError.fromError(error) {
-                let message = loginRequiredError.localizedDescription
-                ErrorLogStore.shared.log("Processing skipped because Typeflux Cloud login is required: \(message)")
-                markFailure(&record, message: message)
-                saveHistoryRecord(record)
-                logPipelineEvent("pipeline-failed", for: record)
-                UsageStatsStore.shared.recordSession(record: record)
-                enforceHistoryRetentionPolicy()
-                let shouldPresentLogin = await MainActor.run {
-                    guard self.processingSessionID == sessionID else { return false }
-                    self.lastRetryableFailureRecord = nil
-                    self.appState.setStatus(.failed(message: message))
-                    return true
-                }
-                if shouldPresentLogin {
-                    await presentTypefluxCloudLoginRequired()
-                }
-                return
-            }
-
             let msg = "Processing failed: \(error.localizedDescription)"
             ErrorLogStore.shared.log(msg)
             markFailure(&record, message: msg)
@@ -1016,22 +905,6 @@ extension WorkflowController {
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
             enforceHistoryRetentionPolicy()
-            if let billingError = TypefluxCloudBillingError.fromError(error) {
-                let shouldPresentBilling = await MainActor.run {
-                    guard self.processingSessionID == sessionID else { return false }
-                    self.lastRetryableFailureRecord = nil
-                    let subscription = AuthState.shared.subscription
-                    self.appState.setStatus(.failed(message: billingError.title(
-                        hasPaidSubscription: subscription.hasPaidSubscription,
-                        billingEnabled: subscription.billingEnabled
-                    )))
-                    return true
-                }
-                if shouldPresentBilling {
-                    await presentCloudBillingError(billingError)
-                }
-                return
-            }
             let retryableFailureRecord = record.audioFilePath == nil ? nil : record
 
             await MainActor.run {
@@ -1521,137 +1394,6 @@ extension WorkflowController {
         overlayController.dismissProcessingIfVisible()
     }
 
-    /// Thread-safe accumulator for LLM streaming chunks captured in @Sendable closures.
-    private final class LLMStreamBuffer: @unchecked Sendable {
-        private var _text = ""
-        private var _startedAt: Date?
-        private var _firstOutputAt: Date?
-        private let lock = NSLock()
-
-        func append(_ chunk: String) {
-            lock.lock()
-            if _firstOutputAt == nil, !chunk.isEmpty {
-                _firstOutputAt = Date()
-            }
-            _text += chunk
-            lock.unlock()
-        }
-
-        func markStarted() {
-            lock.lock()
-            _startedAt = _startedAt ?? Date()
-            lock.unlock()
-        }
-
-        var text: String {
-            lock.lock()
-            defer { lock.unlock() }
-            return _text
-        }
-
-        var timing: (startedAt: Date?, firstOutputAt: Date?) {
-            lock.lock()
-            defer { lock.unlock() }
-            return (_startedAt, _firstOutputAt)
-        }
-    }
-
-    /// Builds an `ASRLLMConfig` by constructing the same prompts the LLM service would
-    /// use for a `rewriteTranscript` request, substituting `{{transcript}}` as a
-    /// placeholder for the actual transcript text.
-    private func buildASRLLMConfig(
-        personaPrompt: String,
-        personaID: UUID?,
-        selectionSnapshot: TextSelectionSnapshot
-    ) -> ASRLLMConfig {
-        let placeholderRequest = LLMRewriteRequest(
-            mode: .rewriteTranscript,
-            sourceText: "{{transcript}}",
-            spokenInstruction: nil,
-            personaPrompt: personaPrompt,
-            personaID: personaID,
-            appSystemContext: AppSystemContext(snapshot: selectionSnapshot),
-            vocabularyTerms: VocabularyStore.activeTerms()
-        )
-        let prompts = PromptCatalog.rewritePrompts(for: placeholderRequest)
-        var effectiveSystemPrompt = PromptCatalog.appendLanguageResolutionPolicy(
-            to: prompts.system
-        )
-        let effectiveUserPrompt = PromptCatalog.appendUserEnvironmentContext(
-            to: prompts.user,
-            appLanguage: settingsStore.appLanguage
-        )
-        if let appContext = placeholderRequest.appSystemContext {
-            let extra = PromptCatalog.appSpecificSystemContext(appContext)
-            if !extra.isEmpty {
-                effectiveSystemPrompt = PromptCatalog.appendAdditionalSystemContext(
-                    extra,
-                    to: effectiveSystemPrompt
-                )
-            }
-        }
-        return ASRLLMConfig(
-            systemPrompt: effectiveSystemPrompt,
-            userPromptTemplate: effectiveUserPrompt,
-            personaID: personaID
-        )
-    }
-
-    /// Performs transcription and, when the server supports it, an inline LLM persona
-    /// rewrite over the same WebSocket connection.  Overlay updates are managed here so
-    /// `processPersonaRewriteFlow` can treat the result identically to a normal rewrite.
-    private func performMergedCloudTranscription(
-        audioFile: AudioFile,
-        personaPrompt: String,
-        personaID: UUID?,
-        selectionSnapshot: TextSelectionSnapshot,
-        cloudScenario: TypefluxCloudScenario,
-        sessionID: UUID
-    ) async throws -> MergedCloudTranscriptionResult {
-        let llmConfig = buildASRLLMConfig(
-            personaPrompt: personaPrompt,
-            personaID: personaID,
-            selectionSnapshot: selectionSnapshot
-        )
-        let llmBuffer = LLMStreamBuffer()
-        let suppressStreamingPreview = shouldSuppressPostRecordingStreamingPreviewForCurrentSTTProvider
-
-        let result = try await sttRouter.transcribeStreamWithLLMRewrite(
-            audioFile: audioFile,
-            llmConfig: llmConfig,
-            scenario: cloudScenario,
-            onASRUpdate: { _ in },
-            onLLMStart: { [weak self] in
-                guard let self else { return }
-                llmBuffer.markStarted()
-                await MainActor.run {
-                    if self.processingSessionID == sessionID {
-                        self.overlayController.transitionToLLMPhase()
-                    }
-                }
-            },
-            onLLMChunk: { [weak self] chunk in
-                guard let self else { return }
-                guard !suppressStreamingPreview else { return }
-                llmBuffer.append(chunk)
-                let current = llmBuffer.text
-                await MainActor.run {
-                    if self.processingSessionID == sessionID {
-                        self.overlayController.updateStreamingText(current)
-                    }
-                }
-            }
-        )
-        let timing = llmBuffer.timing
-        return MergedCloudTranscriptionResult(
-            transcript: result.transcript,
-            rewritten: result.rewritten,
-            llmStartedAt: timing.startedAt,
-            llmFirstOutputAt: timing.firstOutputAt,
-            llmCompletedAt: result.rewritten == nil ? nil : Date()
-        )
-    }
-
     private func processPersonaRewriteFlow(
         transcribedText: String,
         personaPrompt: String,
@@ -1659,7 +1401,6 @@ extension WorkflowController {
         selectionSnapshot: TextSelectionSnapshot,
         inputContext: InputContextSnapshot?,
         multimodalHandlesPersona: Bool,
-        mergedLLMResult: String? = nil,
         sessionID: UUID,
         record: inout HistoryRecord,
         pipelineTiming: inout HistoryPipelineTiming
@@ -1693,26 +1434,13 @@ extension WorkflowController {
         saveHistoryRecord(record)
 
         let rewriteOutput: String
-        var billingFallbackError: TypefluxCloudBillingError?
-        if let merged = mergedLLMResult {
-            // Rewrite already completed as part of the merged ASR+LLM WebSocket session.
-            // The overlay was updated with streaming chunks during transcription, so we
-            // only need to record the timing and move on.
-            pipelineTiming.llmProcessingStartedAt = pipelineTiming.llmProcessingStartedAt
-                ?? pipelineTiming.transcriptionCompletedAt
-                ?? Date()
-            pipelineTiming.llmProcessingCompletedAt = pipelineTiming.llmProcessingCompletedAt ?? Date()
-            record.pipelineTiming = pipelineTiming
-            rewriteOutput = merged
-            logPipelineEvent("llm-processing-completed", for: record)
-        } else {
-            await MainActor.run { self.overlayController.transitionToLLMPhase() }
-            pipelineTiming.llmProcessingStartedAt = Date()
-            record.pipelineTiming = pipelineTiming
-            saveHistoryRecord(record)
-            logPipelineEvent("llm-processing-started", for: record)
+        await MainActor.run { self.overlayController.transitionToLLMPhase() }
+        pipelineTiming.llmProcessingStartedAt = Date()
+        record.pipelineTiming = pipelineTiming
+        saveHistoryRecord(record)
+        logPipelineEvent("llm-processing-started", for: record)
 
-            do {
+        do {
                 let rewriteResult = try await generateRewrite(
                     request: LLMRewriteRequest(
                         mode: .rewriteTranscript,
@@ -1761,19 +1489,10 @@ extension WorkflowController {
                 )
                 pipelineTiming.llmProcessingCompletedAt = Date()
                 rewriteOutput = transcribedText
-            } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
-                let billingError = TypefluxCloudBillingError.fromError(error)
-                ErrorLogStore.shared.log(
-                    "Typeflux Cloud billing requirement during persona rewrite, using transcript as fallback"
-                )
-                pipelineTiming.llmProcessingCompletedAt = Date()
-                rewriteOutput = transcribedText
-                billingFallbackError = billingError
             } catch {
                 // All other failures (network error, API error, etc.) are surfaced to the
                 // user as a retryable failure so they are never silently swallowed.
                 throw error
-            }
         }
 
         record.pipelineTiming = pipelineTiming
@@ -1793,10 +1512,6 @@ extension WorkflowController {
         record.applyStatus = .succeeded
         record.applyMessage = result.outcome.message
         saveHistoryRecord(record)
-
-        if let billingFallbackError {
-            await presentCloudBillingError(billingFallbackError)
-        }
     }
 
     private func processDictationFlow(
@@ -1837,11 +1552,6 @@ extension WorkflowController {
         inputContext: InputContextSnapshot?
     ) -> Bool {
         hasRewritePersona(personaPrompt) || inputContext?.hasContent == true
-    }
-
-    func shouldShowTypefluxCloudASRLoginFallbackNotice() async -> Bool {
-        guard settingsStore.sttProvider == .typefluxOfficial else { return false }
-        return await MainActor.run { !AuthState.shared.isLoggedIn }
     }
 
     func shouldTreatAsSkippedSpeechInput(error: Error, audioFile: AudioFile) -> Bool {

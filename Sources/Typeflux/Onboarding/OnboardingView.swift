@@ -27,7 +27,6 @@ struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
     @ObservedObject private var localization = AppLocalization.shared
-    @ObservedObject private var authState = AuthState.shared
     @State private var googleCloudOAuthAuthorized = GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable()
     @State private var isAuthorizingGoogleCloudOAuth = false
     @Environment(\.colorScheme) private var colorScheme
@@ -169,8 +168,6 @@ struct OnboardingView: View {
         switch step {
         case .language:
             "Language"
-        case .account:
-            "Typeflux Cloud"
         case .stt:
             "Voice Recognition"
         case .llm:
@@ -190,8 +187,6 @@ struct OnboardingView: View {
         switch step {
         case .language, .shortcuts:
             1030
-        case .account:
-            860
         case .permissions:
             940
         case .stt, .llm:
@@ -204,8 +199,6 @@ struct OnboardingView: View {
         switch viewModel.currentStep {
         case .language:
             languageStep(contentHeight: availableContentHeight(in: size))
-        case .account:
-            accountStep(contentHeight: availableContentHeight(in: size))
         case .stt:
             sttStep
         case .llm:
@@ -245,76 +238,6 @@ struct OnboardingView: View {
             Spacer(minLength: 0)
         }
         .frame(minHeight: contentHeight)
-    }
-
-    private func accountStep(contentHeight: CGFloat) -> some View {
-        VStack {
-            Spacer(minLength: 0)
-
-            VStack(alignment: .center, spacing: 28) {
-                if authState.isLoggedIn {
-                    editorialStepHeader(
-                        eyebrow: stepEyebrow(for: .account),
-                        title: L("onboarding.account.title"),
-                        subtitle: L("onboarding.account.subtitle"),
-                        alignCenter: true,
-                        showStepCounter: false
-                    )
-                }
-
-                VStack(spacing: 18) {
-                    if authState.isLoggedIn {
-                        signedInAccountCard
-                    } else {
-                        LoginView(presentationStyle: .plain) {
-                            viewModel.useCloudAccountModelsAndContinue()
-                        }
-                        .padding(.top, 8)
-                        .padding(.bottom, 6)
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-                .frame(maxWidth: 460)
-                .frame(maxWidth: .infinity)
-            }
-            .frame(maxWidth: 660, alignment: .center)
-            .frame(maxWidth: .infinity)
-
-            Spacer(minLength: 0)
-        }
-        .frame(minHeight: contentHeight)
-    }
-
-    private var signedInAccountCard: some View {
-        onboardingConfigCard {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .center, spacing: 14) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(StudioTheme.accent)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(authState.userProfile?.resolvedDisplayName ?? L("provider.llm.typefluxCloud"))
-                            .font(.studioDisplay(18, weight: .bold))
-                            .foregroundStyle(onboardingPrimaryText)
-                        Text(authState.userProfile?.email ?? L("onboarding.account.subtitle"))
-                            .font(.studioBody(12))
-                            .foregroundStyle(onboardingSecondaryText)
-                    }
-
-                    Spacer()
-                }
-
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(StudioTheme.accent)
-                    Text(L("onboarding.account.cloudReady"))
-                        .font(.studioBody(12))
-                        .foregroundStyle(onboardingSecondaryText)
-                }
-            }
-        }
     }
 
     private func languageCard(_ language: AppLanguage) -> some View {
@@ -449,7 +372,7 @@ struct OnboardingView: View {
             sonioxConfigFields
         case .deepgram:
             deepgramConfigFields
-        case .appleSpeech, .typefluxOfficial:
+        case .appleSpeech:
             EmptyView()
         }
     }
@@ -467,7 +390,7 @@ struct OnboardingView: View {
                 VStack(spacing: 10) {
                     let standardOptions = (
                         LLMRemoteProvider.settingsDisplayOrder
-                            .filter { $0 != .typefluxCloud && $0 != .custom }
+                            .filter { $0 != .custom }
                             .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
                             .map { provider in
                                 (
@@ -798,7 +721,7 @@ struct OnboardingView: View {
             }
 
             do {
-                let token = try await GoogleOAuthService.authorizeGoogleCloud(
+                let token = try await GoogleCloudSpeechOAuthAuthorizer.authorizeGoogleCloud(
                     clientID: AppServerConfiguration.googleCloudOAuthClientID,
                     clientSecret: AppServerConfiguration.googleCloudOAuthClientSecret.isEmpty
                         ? nil : AppServerConfiguration.googleCloudOAuthClientSecret
@@ -892,10 +815,7 @@ struct OnboardingView: View {
             .filter { !$0.isEmpty }
 
         return Group {
-            if provider == .typefluxCloud {
-                EmptyView()
-            } else {
-                onboardingConfigCard {
+            onboardingConfigCard {
                     VStack(spacing: 12) {
                         if provider == .freeModel {
                             if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
@@ -936,7 +856,6 @@ struct OnboardingView: View {
                             )
                         }
                     }
-                }
             }
         }
     }
@@ -1115,7 +1034,7 @@ struct OnboardingView: View {
         case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq, .soniox,
              .deepgram, .freeModel:
             true
-        case .localModel, .appleSpeech, .typefluxOfficial:
+        case .localModel, .appleSpeech:
             false
         }
     }
@@ -1136,7 +1055,7 @@ struct OnboardingView: View {
             URL(string: "https://console.volcengine.com/speech/service/asr")
         case .multimodalLLM:
             URL(string: "https://platform.openai.com/api-keys")
-        case .googleCloud, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
+        case .googleCloud, .freeModel, .localModel, .appleSpeech:
             nil
         }
     }
@@ -1173,8 +1092,6 @@ struct OnboardingView: View {
             URL(string: "https://opencode.ai/auth")
         case .freeModel, .custom:
             nil
-        case .typefluxCloud:
-            nil
         }
     }
 
@@ -1184,7 +1101,7 @@ struct OnboardingView: View {
         }
 
         return switch viewModel.llmRemoteProvider {
-        case .freeModel, .typefluxCloud:
+        case .freeModel:
             false
         default:
             true
@@ -1250,7 +1167,6 @@ struct OnboardingView: View {
         case .soniox: .soniox
         case .deepgram: .deepgram
         case .appleSpeech: .appleSpeech
-        case .typefluxOfficial: .typefluxOfficial
         }
     }
 
@@ -1326,8 +1242,6 @@ struct OnboardingView: View {
         case .doubaoRealtime: "bolt.horizontal.circle"
         case .soniox: "waveform.and.mic"
         case .deepgram: "waveform.badge.magnifyingglass"
-        case .typefluxOfficial: "infinity"
-        case .typefluxCloud: "infinity"
         }
     }
 
@@ -1352,7 +1266,6 @@ struct OnboardingView: View {
         case .soniox: L("settings.models.card.soniox.summary")
         case .deepgram: L("settings.models.card.deepgram.summary")
         case .appleSpeech: ""
-        case .typefluxOfficial: L("settings.models.card.typefluxOfficial.summary")
         }
     }
 
@@ -1994,31 +1907,16 @@ struct OnboardingView: View {
 
             Spacer()
 
-            if viewModel.currentStep == .account {
-                footerTertiaryButton(
-                    title: L("onboarding.account.skip"),
-                    foregroundColor: onboardingAccountSkipText
-                ) {
-                    viewModel.continueWithoutCloudAccount()
-                }
-            } else if viewModel.isSkippable {
+            if viewModel.isSkippable {
                 footerTertiaryButton(title: L("onboarding.action.skip")) {
                     viewModel.skip()
                 }
             }
 
-            if viewModel.currentStep == .account {
-                if authState.isLoggedIn {
-                    footerPrimaryButton(title: L("onboarding.action.continue")) {
-                        viewModel.useCloudAccountModelsAndContinue()
-                    }
-                }
-            } else {
-                footerPrimaryButton(
-                    title: viewModel.isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue")
-                ) {
-                    viewModel.advance()
-                }
+            footerPrimaryButton(
+                title: viewModel.isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue")
+            ) {
+                viewModel.advance()
             }
         }
         .padding(.horizontal, 18)
@@ -2242,10 +2140,6 @@ struct OnboardingView: View {
 
     private var onboardingTertiaryText: Color {
         StudioTheme.textTertiary.opacity(isDarkMode ? 0.94 : 0.98)
-    }
-
-    private var onboardingAccountSkipText: Color {
-        StudioTheme.textTertiary.opacity(isDarkMode ? 0.56 : 0.62)
     }
 
     private var onboardingCardSurface: Color {

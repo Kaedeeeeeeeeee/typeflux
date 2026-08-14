@@ -58,7 +58,7 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
         let chunkCountAfterFinish = await upstream.sentChunkCount()
         let byteCountAfterFinish = await upstream.sentByteCount()
         XCTAssertEqual(chunkCountAfterFinish, 1)
-        XCTAssertEqual(byteCountAfterFinish, CloudASRAudioConverter.chunkSize)
+        XCTAssertEqual(byteCountAfterFinish, PCM16AudioConverter.chunkSize)
     }
 
     func testBufferedSessionThrowsStartErrorFromFinish() async throws {
@@ -126,7 +126,7 @@ final class RealtimeTranscriptionSessionTests: XCTestCase {
     private func makeFloatBuffer(frameCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
-            sampleRate: CloudASRAudioConverter.targetSampleRate,
+            sampleRate: PCM16AudioConverter.targetSampleRate,
             channels: 1,
             interleaved: false
         )!

@@ -295,25 +295,6 @@ final class SettingsViewModelPersonaTests: XCTestCase {
 
     // MARK: - Auto persona default when LLM becomes configured via Settings
 
-    func testSwitchingToTypefluxCloudAutoSelectsTypefluxPersona() throws {
-        let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        let settingsStore = SettingsStore(defaults: defaults)
-        let historyStore = InMemoryHistoryStore()
-        let viewModel = StudioViewModel(
-            settingsStore: settingsStore,
-            historyStore: historyStore,
-            initialSection: .home
-        )
-
-        XCTAssertFalse(settingsStore.personaRewriteEnabled)
-
-        viewModel.setLLMRemoteProvider(LLMRemoteProvider.typefluxCloud)
-
-        XCTAssertTrue(settingsStore.personaRewriteEnabled)
-        XCTAssertEqual(settingsStore.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-    }
-
     func testApplyingOpenAIAPIKeyAutoSelectsTypefluxPersona() throws {
         let suiteName = "SettingsViewModelPersonaTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -349,7 +330,9 @@ final class SettingsViewModelPersonaTests: XCTestCase {
         // User explicitly turns persona off before configuring LLM.
         settingsStore.applyPersonaSelection(nil)
 
-        viewModel.setLLMRemoteProvider(LLMRemoteProvider.typefluxCloud)
+        viewModel.setLLMRemoteProvider(.openAI)
+        viewModel.setLLMAPIKey("sk-test")
+        viewModel.applyModelConfiguration(shouldShowToast: false)
 
         XCTAssertFalse(settingsStore.personaRewriteEnabled, "Explicit opt-out must be respected")
         XCTAssertEqual(settingsStore.activePersonaID, "")

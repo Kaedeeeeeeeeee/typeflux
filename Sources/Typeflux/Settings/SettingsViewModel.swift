@@ -106,13 +106,6 @@ final class StudioViewModel: ObservableObject {
     @Published var preferredMicrophoneID: String
     @Published var muteSystemOutputDuringRecording: Bool
     @Published var soundEffectsEnabled: Bool
-    @Published var preferredAPIServer = CloudServerPreferences.automaticValue
-    @Published var preferredASRServer = CloudServerPreferences.automaticValue
-    @Published private(set) var apiServerStatuses: [CloudEndpointStatus] = []
-    @Published private(set) var asrServerStatuses: [CloudEndpointStatus] = []
-    @Published private(set) var isTestingCloudServers = false
-    @Published private(set) var cloudServerTestSummary: String?
-
     @Published var llmBaseURL: String
     @Published var llmModel: String
     @Published var llmAPIKey: String
@@ -257,14 +250,12 @@ final class StudioViewModel: ObservableObject {
     private var appearanceObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
     private var agentJobObserver: NSObjectProtocol?
-    private var cloudAccountModelDefaultsObserver: NSObjectProtocol?
     private var localModelDownloadProgressObserver: NSObjectProtocol?
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
     private var historyRefreshTask: Task<Void, Never>?
     private var localSTTPreparationTask: Task<Void, Never>?
-    private var cloudServerTestTask: Task<Void, Never>?
     private var localSTTPreparationID: UUID?
     private var historyRefreshGeneration = 0
     private let audioPreviewPlayer: HistoryAudioPreviewPlaying
@@ -327,8 +318,6 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .soniox
         case .deepgram:
             focusedModelProvider = .deepgram
-        case .typefluxOfficial:
-            focusedModelProvider = .typefluxOfficial
         }
         appearanceMode = settingsStore.appearanceMode
         overlayStyle = settingsStore.overlayStyle
@@ -336,8 +325,6 @@ final class StudioViewModel: ObservableObject {
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         muteSystemOutputDuringRecording = settingsStore.muteSystemOutputDuringRecording
         soundEffectsEnabled = settingsStore.soundEffectsEnabled
-        preferredAPIServer = CloudServerPreferences.shared.preferredAPIServer
-        preferredASRServer = CloudServerPreferences.shared.preferredASRServer
         llmBaseURL = settingsStore.llmBaseURL(for: initialLLMRemoteProvider)
         llmModel = settingsStore.llmModel(for: initialLLMRemoteProvider)
         llmAPIKey = settingsStore.llmAPIKey(for: initialLLMRemoteProvider)
@@ -480,15 +467,6 @@ final class StudioViewModel: ObservableObject {
                 self?.refreshAgentJobs()
             }
         }
-        cloudAccountModelDefaultsObserver = NotificationCenter.default.addObserver(
-            forName: .cloudAccountModelDefaultsDidApply,
-            object: settingsStore,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.syncCloudAccountModelsFromStore()
-            }
-        }
         localModelDownloadProgressObserver = NotificationCenter.default.addObserver(
             forName: .localModelDownloadProgressDidChange,
             object: nil,
@@ -499,7 +477,6 @@ final class StudioViewModel: ObservableObject {
             }
         }
         syncLocalModelDownloadProgress()
-        refreshCloudServerStatuses()
         audioPreviewPlayer.onPlaybackFinished = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.playingAudioRecordID = nil
@@ -526,14 +503,10 @@ final class StudioViewModel: ObservableObject {
         if let agentJobObserver {
             NotificationCenter.default.removeObserver(agentJobObserver)
         }
-        if let cloudAccountModelDefaultsObserver {
-            NotificationCenter.default.removeObserver(cloudAccountModelDefaultsObserver)
-        }
         if let localModelDownloadProgressObserver {
             NotificationCenter.default.removeObserver(localModelDownloadProgressObserver)
         }
         historyRefreshTask?.cancel()
-        cloudServerTestTask?.cancel()
         audioPreviewPlayer.stop()
     }
 
@@ -807,7 +780,7 @@ final class StudioViewModel: ObservableObject {
             case .appleSpeech, .localModel:
                 "Local Processing"
             case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq,
-                 .soniox, .deepgram, .typefluxOfficial:
+                 .soniox, .deepgram:
                 "Remote API"
             }
         case .llm:
@@ -841,8 +814,6 @@ final class StudioViewModel: ObservableObject {
                 "Streaming audio to Soniox for real-time speech recognition."
             case .deepgram:
                 "Using Deepgram Nova-3 for multilingual cloud speech recognition."
-            case .typefluxOfficial:
-                "Using Typeflux's built-in speech recognition service."
             }
         case .llm:
             llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
@@ -856,89 +827,6 @@ final class StudioViewModel: ObservableObject {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
         }
-    }
-
-    var availableAPIServers: [String] {
-        let configured = AppServerConfiguration.apiBaseURLs.compactMap { URL(string: $0)?.absoluteString }
-        return uniqueServerURLs(configured + apiServerStatuses.map(\.baseURL.absoluteString))
-    }
-
-    var availableASRServers: [String] {
-        uniqueServerURLs(asrServerStatuses.map(\.baseURL.absoluteString))
-    }
-
-    func setPreferredAPIServer(_ value: String) {
-        preferredAPIServer = value
-        CloudServerPreferences.shared.preferredAPIServer = value
-    }
-
-    func setPreferredASRServer(_ value: String) {
-        preferredASRServer = value
-        CloudServerPreferences.shared.preferredASRServer = value
-    }
-
-    func refreshCloudServerStatuses() {
-        cloudServerTestTask?.cancel()
-        cloudServerTestTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
-            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
-            ensureAvailableServerSelections()
-        }
-    }
-
-    func testCloudServerLatency() {
-        guard !isTestingCloudServers else { return }
-        isTestingCloudServers = true
-        cloudServerTestSummary = nil
-        cloudServerTestTask?.cancel()
-        cloudServerTestTask = Task { @MainActor [weak self] in
-            async let apiProbe: Void = CloudEndpointRegistry.shared.probeAll()
-            async let asrProbe: Void = Self.probeASRServers()
-            _ = await (apiProbe, asrProbe)
-
-            guard let self, !Task.isCancelled else { return }
-            apiServerStatuses = await CloudEndpointRegistry.shared.snapshot()
-            asrServerStatuses = await TypefluxASRServerRegistry.shared.snapshot()
-            ensureAvailableServerSelections()
-            let apiAvailable = availableServerCount(in: apiServerStatuses)
-            let asrAvailable = availableServerCount(in: asrServerStatuses)
-            cloudServerTestSummary = L(
-                "settings.servers.speedTest.summary",
-                apiAvailable,
-                apiServerStatuses.count,
-                asrAvailable,
-                asrServerStatuses.count
-            )
-            isTestingCloudServers = false
-            if let cloudServerTestSummary {
-                showToast(cloudServerTestSummary)
-            }
-        }
-    }
-
-    private static func probeASRServers() async {
-        await TypefluxASRServerRegistry.shared.refreshPublicConfig()
-    }
-
-    private func availableServerCount(in statuses: [CloudEndpointStatus]) -> Int {
-        statuses.count { $0.lastProbeAt != nil && $0.lastError == nil && $0.latencyMs != nil }
-    }
-
-    private func ensureAvailableServerSelections() {
-        if !preferredAPIServer.isEmpty, !availableAPIServers.contains(preferredAPIServer) {
-            setPreferredAPIServer(CloudServerPreferences.automaticValue)
-        }
-        if !preferredASRServer.isEmpty,
-           !availableASRServers.isEmpty,
-           !availableASRServers.contains(preferredASRServer) {
-            setPreferredASRServer(CloudServerPreferences.automaticValue)
-        }
-    }
-
-    private func uniqueServerURLs(_ values: [String]) -> [String] {
-        var seen = Set<String>()
-        return values.filter { seen.insert($0).inserted }
     }
 
     func refreshHistory(reset: Bool = true) {
@@ -1133,8 +1021,6 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .soniox
         case .deepgram:
             focusedModelProvider = .deepgram
-        case .typefluxOfficial:
-            focusedModelProvider = .typefluxOfficial
         }
     }
 
@@ -1270,17 +1156,6 @@ final class StudioViewModel: ObservableObject {
         llmAPIKey = settingsStore.llmAPIKey(for: provider)
     }
 
-    private func syncCloudAccountModelsFromStore() {
-        sttProvider = .typefluxOfficial
-        llmProvider = .openAICompatible
-        llmRemoteProvider = .typefluxCloud
-        loadLLMConfiguration(for: .typefluxCloud)
-        focusedModelProvider = activeProvider(for: modelDomain)
-        sttConnectionTestState = .idle
-        llmConnectionTestState = .idle
-        syncPersonaSelectionFromStore()
-    }
-
     func setModelDomain(_ domain: StudioModelDomain) {
         modelDomain = domain
         focusedModelProvider = activeProvider(for: domain)
@@ -1395,7 +1270,7 @@ final class StudioViewModel: ObservableObject {
             }
 
             do {
-                let token = try await GoogleOAuthService.authorizeGoogleCloud(
+                let token = try await GoogleCloudSpeechOAuthAuthorizer.authorizeGoogleCloud(
                     clientID: AppServerConfiguration.googleCloudOAuthClientID,
                     clientSecret: AppServerConfiguration.googleCloudOAuthClientSecret.isEmpty
                         ? nil : AppServerConfiguration.googleCloudOAuthClientSecret
@@ -2553,7 +2428,7 @@ final class StudioViewModel: ObservableObject {
             settingsStore.deepgramAPIKey = deepgramAPIKey
             settingsStore.deepgramModel = deepgramModel
             settingsStore.deepgramLanguage = deepgramLanguage
-        case .appleSpeech, .localSTT, .typefluxOfficial, .typefluxCloud:
+        case .appleSpeech, .localSTT:
             break
         }
         settingsStore.applyDefaultPersonaIfLLMConfigured()
@@ -2566,7 +2441,6 @@ final class StudioViewModel: ObservableObject {
         guard focusedModelProvider.domain == .llm else { return false }
         guard focusedModelProvider != .ollama else { return false }
         guard focusedModelProvider != .freeModel else { return false }
-        guard focusedModelProvider != .typefluxCloud else { return false }
         return llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -2593,7 +2467,7 @@ final class StudioViewModel: ObservableObject {
                     switch capturedProvider {
                     case .freeSTT:
                         return (firstTokenDate, collected)
-                    case .typefluxCloud, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
+                    case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
                          .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
                         let connection = try await LLMConnectionTestResolver.resolve(
                             provider: capturedRemoteProvider,
@@ -2606,7 +2480,7 @@ final class StudioViewModel: ObservableObject {
                             baseURL: connection.baseURL,
                             model: connection.model,
                             apiKey: connection.apiKey,
-                            additionalHeaders: connection.headers(for: .modelSetup)
+                            additionalHeaders: connection.additionalHeaders
                         )
                         if !preview.isEmpty {
                             firstTokenDate = Date()
@@ -2681,7 +2555,7 @@ final class StudioViewModel: ObservableObject {
                             if payload.done || collected.count >= 60 { break }
                         }
                     case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                         .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial:
+                         .googleCloud, .groqSTT, .soniox, .deepgram:
                         return (firstTokenDate, collected)
                     }
 
@@ -2789,8 +2663,6 @@ final class StudioViewModel: ObservableObject {
                             model: capturedDeepgramModel,
                             language: capturedDeepgramLanguage
                         )
-                    case .typefluxOfficial:
-                        try await TypefluxOfficialTranscriber.testConnection()
                     default:
                         ""
                     }
@@ -2933,8 +2805,6 @@ final class StudioViewModel: ObservableObject {
                 .soniox
             case .deepgram:
                 .deepgram
-            case .typefluxOfficial:
-                .typefluxOfficial
             }
         case .llm:
             llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID

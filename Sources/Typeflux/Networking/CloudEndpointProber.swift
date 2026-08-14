@@ -1,6 +1,6 @@
 import Foundation
 
-/// Result of a single ping probe against a Typeflux Cloud endpoint.
+/// Result of a single ping probe against an application service endpoint.
 struct CloudEndpointProbeResult: Sendable {
     let latencyMs: Double
     let serverID: String?
@@ -35,7 +35,7 @@ enum CloudEndpointProbeError: LocalizedError {
     }
 }
 
-/// Sends a single ping request against a Typeflux Cloud endpoint and returns
+/// Sends a single ping request against an application service endpoint and returns
 /// the measured latency along with server-reported metadata.
 protocol CloudEndpointProbing: Sendable {
     func probe(baseURL: URL, nonce: String, timeout: TimeInterval) async throws -> CloudEndpointProbeResult
@@ -64,7 +64,7 @@ struct HTTPCloudEndpointProber: CloudEndpointProbing {
         request.httpMethod = "GET"
         request.timeoutInterval = timeout
         request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
-        TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
+        AppHTTPHeaders.apply(to: &request)
 
         let start = ContinuousClock.now
 
@@ -139,7 +139,6 @@ struct HTTPHealthEndpointProber: CloudEndpointProbing {
         request.httpMethod = "GET"
         request.timeoutInterval = timeout
         request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
-        TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
 
         let start = ContinuousClock.now
         let data: Data

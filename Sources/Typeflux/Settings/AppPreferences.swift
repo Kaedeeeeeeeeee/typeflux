@@ -88,14 +88,12 @@ enum STTProvider: String, CaseIterable, Codable {
     case doubaoRealtime
     case googleCloud
     case groq
-    case typefluxOfficial
     case soniox
     case deepgram
 
     static let defaultProvider: STTProvider = .localModel
 
     static let settingsDisplayOrder: [STTProvider] = [
-        .typefluxOfficial,
         .freeModel,
         .localModel,
         .soniox,
@@ -108,9 +106,7 @@ enum STTProvider: String, CaseIterable, Codable {
         .groq
     ]
 
-    static let onboardingDisplayOrder: [STTProvider] = settingsDisplayOrder.filter {
-        $0 != .typefluxOfficial
-    }
+    static let onboardingDisplayOrder: [STTProvider] = settingsDisplayOrder
 
     var displayName: String {
         switch self {
@@ -132,8 +128,6 @@ enum STTProvider: String, CaseIterable, Codable {
             L("provider.stt.googleCloud")
         case .groq:
             L("provider.stt.groq")
-        case .typefluxOfficial:
-            L("provider.stt.typefluxOfficial")
         case .soniox:
             L("provider.stt.soniox")
         case .deepgram:
