@@ -18,6 +18,61 @@ enum GoogleCloudSpeechDefaults {
     static let suggestedModels = ["chirp_3", "long", "short", "latest_long", "latest_short"]
 }
 
+enum DeepgramASRDefaults {
+    static let model = "nova-3"
+    static let suggestedModels = ["nova-3", "nova-3-general"]
+    static let endpoint = "https://api.deepgram.com/v1/listen"
+}
+
+enum DeepgramLanguage: String, CaseIterable, Identifiable {
+    case automatic
+    case simplifiedChinese = "zh-CN"
+    case traditionalChinese = "zh-TW"
+    case english = "en"
+    case japanese = "ja"
+    case korean = "ko"
+
+    var id: String {
+        rawValue
+    }
+
+    var displayName: String {
+        switch self {
+        case .automatic:
+            L("common.automatic")
+        case .simplifiedChinese:
+            L("language.option.simplifiedChinese")
+        case .traditionalChinese:
+            L("language.option.traditionalChinese")
+        case .english:
+            L("language.option.english")
+        case .japanese:
+            L("language.option.japanese")
+        case .korean:
+            L("language.option.korean")
+        }
+    }
+
+    var languageCode: String? {
+        self == .automatic ? nil : rawValue
+    }
+
+    static func defaultLanguage(for appLanguage: AppLanguage) -> DeepgramLanguage {
+        switch appLanguage {
+        case .english:
+            .english
+        case .simplifiedChinese:
+            .simplifiedChinese
+        case .traditionalChinese:
+            .traditionalChinese
+        case .japanese:
+            .japanese
+        case .korean:
+            .korean
+        }
+    }
+}
+
 enum ExperimentalFeatureFlags {
     /// Keep OpenAI Realtime STT behind an explicit flag until the feature is production ready.
     static let openAIRealtimeSTTEnabled = false
@@ -35,6 +90,7 @@ enum STTProvider: String, CaseIterable, Codable {
     case groq
     case typefluxOfficial
     case soniox
+    case deepgram
 
     static let defaultProvider: STTProvider = .localModel
 
@@ -43,6 +99,7 @@ enum STTProvider: String, CaseIterable, Codable {
         .freeModel,
         .localModel,
         .soniox,
+        .deepgram,
         .aliCloud,
         .doubaoRealtime,
         .googleCloud,
@@ -79,6 +136,8 @@ enum STTProvider: String, CaseIterable, Codable {
             L("provider.stt.typefluxOfficial")
         case .soniox:
             L("provider.stt.soniox")
+        case .deepgram:
+            L("provider.stt.deepgram")
         }
     }
 

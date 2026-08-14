@@ -10,6 +10,10 @@ final class AppCoordinator {
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
 
+    static func initialStudioSection(isOnboardingCompleted _: Bool) -> StudioSection {
+        .home
+    }
+
     // swiftlint:disable:next function_body_length
     func start() {
         let settingsStore = di.settingsStore
@@ -90,11 +94,11 @@ final class AppCoordinator {
         asrPublicConfigRefreshScheduler.start()
         Task { await AuthState.shared.refreshTokenIfNeeded() }
 
-        if !di.settingsStore.isOnboardingCompleted {
-            presentOnboarding()
-        } else {
-            presentPermissionGuidanceIfNeeded()
-        }
+        presentStudio(
+            initialSection: Self.initialStudioSection(
+                isOnboardingCompleted: di.settingsStore.isOnboardingCompleted
+            )
+        )
     }
 
     func stop() {
@@ -133,10 +137,14 @@ final class AppCoordinator {
             return
         }
 
+        presentStudio(initialSection: .settings)
+    }
+
+    private func presentStudio(initialSection: StudioSection) {
         SettingsWindowController.shared.show(
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
-            initialSection: .settings,
+            initialSection: initialSection,
             notificationService: di.notificationService,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)

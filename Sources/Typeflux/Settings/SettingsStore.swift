@@ -364,6 +364,45 @@ final class SettingsStore {
         }
     }
 
+    var deepgramAPIKey: String {
+        get { defaults.string(forKey: "stt.deepgram.apiKey") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.deepgram.apiKey") }
+    }
+
+    var deepgramModel: String {
+        get {
+            let stored = defaults.string(forKey: "stt.deepgram.model")?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return stored.isEmpty ? DeepgramASRDefaults.model : stored
+        }
+        set {
+            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                defaults.removeObject(forKey: "stt.deepgram.model")
+            } else {
+                defaults.set(trimmed, forKey: "stt.deepgram.model")
+            }
+        }
+    }
+
+    var deepgramLanguage: DeepgramLanguage {
+        get {
+            guard
+                let raw = defaults.string(forKey: "stt.deepgram.language"),
+                let language = DeepgramLanguage(rawValue: raw)
+            else {
+                return DeepgramLanguage.defaultLanguage(for: appLanguage)
+            }
+            return language
+        }
+        set { defaults.set(newValue.rawValue, forKey: "stt.deepgram.language") }
+    }
+
+    var hasConfiguredDeepgramLanguage: Bool {
+        guard let raw = defaults.string(forKey: "stt.deepgram.language") else { return false }
+        return DeepgramLanguage(rawValue: raw) != nil
+    }
+
     var multimodalLLMModel: String {
         get { defaults.string(forKey: "stt.multimodal.model") ?? "" }
         set { defaults.set(newValue, forKey: "stt.multimodal.model") }

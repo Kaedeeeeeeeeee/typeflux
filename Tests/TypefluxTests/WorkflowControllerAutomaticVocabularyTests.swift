@@ -354,6 +354,7 @@ final class WorkflowControllerAutomaticVocabularyTests: XCTestCase {
                 googleCloud: MockWorkflowTranscriber(),
                 groq: MockWorkflowTranscriber(),
                 soniox: MockWorkflowTranscriber(),
+                deepgram: MockWorkflowTranscriber(),
                 typefluxOfficial: MockWorkflowTranscriber()
             ),
             llmService: llmService,

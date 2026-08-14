@@ -163,6 +163,7 @@ final class STTRouterTests: XCTestCase {
     private var doubaoRealtime: MockTranscriber!
     private var googleCloud: MockTranscriber!
     private var groq: MockTranscriber!
+    private var deepgram: MockTranscriber!
     private var typefluxOfficial: MockTranscriber!
 
     override func setUp() {
@@ -180,6 +181,7 @@ final class STTRouterTests: XCTestCase {
         doubaoRealtime = MockTranscriber()
         googleCloud = MockTranscriber()
         groq = MockTranscriber()
+        deepgram = MockTranscriber()
         typefluxOfficial = MockTranscriber()
     }
 
@@ -197,6 +199,7 @@ final class STTRouterTests: XCTestCase {
         doubaoRealtime = nil
         googleCloud = nil
         groq = nil
+        deepgram = nil
         typefluxOfficial = nil
         super.tearDown()
     }
@@ -221,6 +224,7 @@ final class STTRouterTests: XCTestCase {
             googleCloud: googleCloud,
             groq: groq,
             soniox: MockTranscriber(),
+            deepgram: deepgram,
             typefluxOfficial: typefluxOfficialOverride ?? typefluxOfficial,
             typefluxCloudLoginFallbackLocalModel: typefluxCloudLoginFallbackLocalModel,
             isTypefluxCloudLoggedIn: isTypefluxCloudLoggedIn,
@@ -253,6 +257,17 @@ final class STTRouterTests: XCTestCase {
         let result = try await router.transcribe(audioFile: dummyAudioFile())
         XCTAssertEqual(result, "whisper result")
         XCTAssertGreaterThan(whisper.transcribeCallCount, 0)
+    }
+
+    func testRoutesToDeepgramTranscriber() async throws {
+        settings.sttProvider = .deepgram
+        deepgram.resultToReturn = "deepgram result"
+        let router = makeRouter()
+
+        let result = try await router.transcribe(audioFile: dummyAudioFile())
+
+        XCTAssertEqual(result, "deepgram result")
+        XCTAssertGreaterThan(deepgram.transcribeCallCount, 0)
     }
 
     func testRoutesToAppleSpeech() async throws {
@@ -695,6 +710,7 @@ final class STTRouterTests: XCTestCase {
             googleCloud: googleCloud,
             groq: groq,
             soniox: MockTranscriber(),
+            deepgram: MockTranscriber(),
             typefluxOfficial: scenarioAware
         )
 

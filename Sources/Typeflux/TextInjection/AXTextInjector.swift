@@ -358,6 +358,11 @@ final class AXTextInjector: TextInjector {
         return selectionSource == "clipboard-copy" && focusMatched
     }
 
+    static func shouldTryClipboardSelectionFallback(selectedRange: CFRange?) -> Bool {
+        guard let selectedRange else { return true }
+        return selectedRange.location < 0 || selectedRange.length != 0
+    }
+
     /// Only restore the user's previous pasteboard if no other writer has
     /// touched `NSPasteboard.general` since we wrote the transcription. If the
     /// change count has advanced, either the user copied something new or a
@@ -540,6 +545,32 @@ final class AXTextInjector: TextInjector {
                 isFocusedTarget: result.context.isFocusedTarget
             )
         }
+
+        if let focused = focusedElement(),
+           let selectedRange = copySelectedTextRange(from: focused),
+           !Self.shouldTryClipboardSelectionFallback(selectedRange: selectedRange) {
+            let role = copyStringAttribute(kAXRoleAttribute as String, from: focused)
+            let editability = isLikelyEditable(element: focused)
+            let isFocusedTarget = copyBooleanAttribute(
+                kAXFocusedAttribute as String,
+                from: focused
+            ) ?? false
+            latestSelectionContext = nil
+            logger.debug("ax-api returned an empty caret range — skipping clipboard-copy")
+            return TextSelectionSnapshot(
+                processID: processID,
+                processName: processName,
+                bundleIdentifier: bundleIdentifier,
+                selectedRange: selectedRange,
+                selectedText: nil,
+                source: "accessibility-caret",
+                isEditable: editability,
+                role: role,
+                windowTitle: containingWindowTitle(of: focused),
+                isFocusedTarget: isFocusedTarget
+            )
+        }
+
         logger.debug("ax-api returned nil — trying clipboard-copy")
 
         if let copiedText = readSelectedTextViaCopy(

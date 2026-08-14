@@ -271,6 +271,7 @@
 "provider.stt.googleCloud" = "Google 語音轉文字";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
+"provider.stt.deepgram" = "Deepgram";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI 相容";
 "provider.llm.custom" = "自訂";
@@ -513,6 +514,7 @@
 "history.clearDialog.message" = "此操作將永久刪除所有歷史記錄及相關音訊檔案，無法復原。";
 "history.toast.retryStarted" = "已開始重試。";
 "history.toast.transcriptCopied" = "轉寫已複製。";
+"history.toast.copyFailed" = "複製轉寫失敗。";
 "history.toast.audioUnavailable" = "音訊檔不可用。";
 "history.toast.audioDownloaded" = "音訊已下載。";
 "history.toast.audioDownloadFailed" = "下載音訊失敗。";
@@ -722,6 +724,7 @@
 "settings.models.useDoubao" = "使用豆包";
 "settings.models.useGroq" = "使用 Groq";
 "settings.models.useSoniox" = "Use Soniox";
+"settings.models.useDeepgram" = "使用 Deepgram";
 "settings.models.useTypefluxOfficial" = "使用 Typeflux 官方";
 "settings.models.useTypefluxCloud" = "使用 Typeflux Cloud";
 "settings.models.badge.local" = "本地";
@@ -739,6 +742,9 @@
 "settings.models.card.googleCloud.summary" = "透過 Google Cloud Speech-to-Text 執行即時串流語音辨識。";
 "settings.models.card.groq.summary" = "透過 Groq 推理介面進行高速 Whisper 轉寫，預設模型為 whisper-large-v3-turbo。";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages.";
+"settings.models.card.deepgram.summary" = "透過 Deepgram Nova-3 進行高準確度多語言雲端轉錄，並自動完成智慧格式化。";
+"settings.models.deepgram.language" = "語音語言";
+"settings.models.deepgram.languageHint" = "自動模式會為每段錄音偵測一種主要語言；Deepgram 暫不支援在同一模型中混合辨識中、日、英三語。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 內建語音辨識服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 內建大型語言模型服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
 "settings.models.card.ollama.summary" = "在本地執行改寫與編輯任務，並可選擇自動準備模型。";
@@ -795,6 +801,7 @@
 "settings.models.overview.googleCloud" = "語音辨識會直接即時串流到 Google Cloud Speech-to-Text。";
 "settings.models.overview.groq" = "語音辨識由 Groq 的高速推理介面透過 Whisper 模型處理。";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket.";
+"settings.models.overview.deepgram" = "錄音會傳送至 Deepgram Nova-3，進行多語言語音辨識和智慧格式化。";
 "settings.models.overview.typefluxOfficial" = "語音辨識由 Typeflux 內建服務處理。";
 "settings.models.overview.typefluxCloud" = "文字改寫和編輯由 Typeflux 內建大型語言模型服務處理。";
 "settings.models.mode.local" = "本地";
@@ -817,6 +824,7 @@
 "settings.models.focused.googleCloud" = "適合希望使用 Google Cloud Speech-to-Text 進行即時串流辨識的情境。";
 "settings.models.focused.groq" = "適合希望使用 Groq 加速推理進行快速雲端轉寫的情境。";
 "settings.models.focused.soniox" = "Use this for accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
+"settings.models.focused.deepgram" = "適合需要使用 Deepgram Nova-3 進行高準確度多語言雲端轉錄的情境。";
 "settings.models.focused.typefluxOfficial" = "使用 Typeflux 內建語音辨識服務，只需登入即可，無需額外設定。";
 "settings.models.focused.typefluxCloud" = "使用 Typeflux 內建大型語言模型服務進行文字改寫和編輯。只需登入即可，無需額外設定。";
 "settings.models.routing" = "路由行為";
@@ -834,6 +842,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text 會直接從此 Mac 處理即時串流 ASR。";
 "settings.models.routing.groq" = "Groq 會透過 Whisper 相容轉寫介面以加速推理處理聽寫。";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 透過 Listen API 處理錄音，並進行多語言辨識。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "授權 Google";

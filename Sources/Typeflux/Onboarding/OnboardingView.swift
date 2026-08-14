@@ -447,6 +447,8 @@ struct OnboardingView: View {
             groqSTTConfigFields
         case .soniox:
             sonioxConfigFields
+        case .deepgram:
+            deepgramConfigFields
         case .appleSpeech, .typefluxOfficial:
             EmptyView()
         }
@@ -848,6 +850,39 @@ struct OnboardingView: View {
         }
     }
 
+    private var deepgramConfigFields: some View {
+        onboardingConfigCard {
+            VStack(spacing: 12) {
+                StudioTextInputCard(
+                    label: L("common.apiKey"),
+                    placeholder: "Deepgram API key",
+                    text: $viewModel.deepgramAPIKey,
+                    secure: true
+                )
+                StudioSuggestedTextInputCard(
+                    label: L("common.model"),
+                    placeholder: DeepgramASRDefaults.model,
+                    text: $viewModel.deepgramModel,
+                    suggestions: DeepgramASRDefaults.suggestedModels
+                )
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Text(L("settings.models.deepgram.language"))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(onboardingSecondaryText)
+                    StudioMenuPicker(
+                        options: DeepgramLanguage.allCases.map { ($0.displayName, $0) },
+                        selection: $viewModel.deepgramLanguage,
+                        width: 320
+                    )
+                    Text(L("settings.models.deepgram.languageHint"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(onboardingTertiaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
     private var llmRemoteConfigFields: some View {
         let provider = viewModel.llmRemoteProvider
         let endpointSuggestions = ([viewModel.llmBaseURL, provider.defaultBaseURL]
@@ -1077,7 +1112,8 @@ struct OnboardingView: View {
 
     private func sttProviderSupportsTest(_ provider: STTProvider) -> Bool {
         switch provider {
-        case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq, .soniox, .freeModel:
+        case .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq, .soniox,
+             .deepgram, .freeModel:
             true
         case .localModel, .appleSpeech, .typefluxOfficial:
             false
@@ -1092,6 +1128,8 @@ struct OnboardingView: View {
             URL(string: "https://console.groq.com/keys")
         case .soniox:
             URL(string: "https://console.soniox.com/")
+        case .deepgram:
+            URL(string: "https://console.deepgram.com/")
         case .aliCloud:
             URL(string: "https://bailian.console.aliyun.com/")
         case .doubaoRealtime:
@@ -1210,6 +1248,7 @@ struct OnboardingView: View {
         case .googleCloud: .googleCloud
         case .groq: .groqSTT
         case .soniox: .soniox
+        case .deepgram: .deepgram
         case .appleSpeech: .appleSpeech
         case .typefluxOfficial: .typefluxOfficial
         }
@@ -1286,6 +1325,7 @@ struct OnboardingView: View {
         case .aliCloud: "antenna.radiowaves.left.and.right"
         case .doubaoRealtime: "bolt.horizontal.circle"
         case .soniox: "waveform.and.mic"
+        case .deepgram: "waveform.badge.magnifyingglass"
         case .typefluxOfficial: "infinity"
         case .typefluxCloud: "infinity"
         }
@@ -1310,6 +1350,7 @@ struct OnboardingView: View {
         case .googleCloud: L("settings.models.card.googleCloud.summary")
         case .groq: L("settings.models.card.groq.summary")
         case .soniox: L("settings.models.card.soniox.summary")
+        case .deepgram: L("settings.models.card.deepgram.summary")
         case .appleSpeech: ""
         case .typefluxOfficial: L("settings.models.card.typefluxOfficial.summary")
         }

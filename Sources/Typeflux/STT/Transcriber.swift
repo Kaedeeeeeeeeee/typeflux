@@ -97,6 +97,7 @@ final class STTRouter {
     let googleCloud: Transcriber
     let groq: Transcriber
     let soniox: Transcriber
+    let deepgram: Transcriber
     let typefluxOfficial: Transcriber
     let typefluxCloudLoginFallbackLocalModel: Transcriber?
     let autoModelDownloadService: AutoModelDownloadService?
@@ -115,6 +116,7 @@ final class STTRouter {
         googleCloud: Transcriber,
         groq: Transcriber,
         soniox: Transcriber,
+        deepgram: Transcriber,
         typefluxOfficial: Transcriber,
         typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
         autoModelDownloadService: AutoModelDownloadService? = nil,
@@ -136,6 +138,7 @@ final class STTRouter {
         self.googleCloud = googleCloud
         self.groq = groq
         self.soniox = soniox
+        self.deepgram = deepgram
         self.typefluxOfficial = typefluxOfficial
         self.typefluxCloudLoginFallbackLocalModel = typefluxCloudLoginFallbackLocalModel
         self.autoModelDownloadService = autoModelDownloadService

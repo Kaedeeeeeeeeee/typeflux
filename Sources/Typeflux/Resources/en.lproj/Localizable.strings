@@ -273,6 +273,7 @@
 "provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
+"provider.stt.deepgram" = "Deepgram";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
@@ -515,6 +516,7 @@
 "history.clearDialog.message" = "This will permanently delete all history records and their associated audio files. This action cannot be undone.";
 "history.toast.retryStarted" = "Retry started.";
 "history.toast.transcriptCopied" = "Transcript copied.";
+"history.toast.copyFailed" = "Failed to copy transcript.";
 "history.toast.audioUnavailable" = "Audio file is unavailable.";
 "history.toast.audioDownloaded" = "Audio downloaded.";
 "history.toast.audioDownloadFailed" = "Failed to download audio.";
@@ -724,6 +726,7 @@
 "settings.models.useDoubao" = "Use Doubao";
 "settings.models.useGroq" = "Use Groq";
 "settings.models.useSoniox" = "Use Soniox";
+"settings.models.useDeepgram" = "Use Deepgram";
 "settings.models.useTypefluxOfficial" = "Use Typeflux Official";
 "settings.models.useTypefluxCloud" = "Use Typeflux Cloud";
 "settings.models.badge.local" = "Local";
@@ -741,6 +744,9 @@
 "settings.models.card.googleCloud.summary" = "Real-time streaming recognition through Google Cloud Speech-to-Text.";
 "settings.models.card.groq.summary" = "Fast Whisper transcription via Groq's inference endpoint with whisper-large-v3-turbo as the default model.";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages and low-latency WebSocket streaming.";
+"settings.models.card.deepgram.summary" = "Accurate multilingual cloud transcription with Deepgram Nova-3 and automatic smart formatting.";
+"settings.models.deepgram.language" = "Speech language";
+"settings.models.deepgram.languageHint" = "Automatic detects one dominant language per recording. Deepgram does not currently support Chinese, Japanese, and English code-switching in one model.";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux's built-in speech recognition service. Sign in with your Typeflux account to use it — no extra API keys required.";
 "settings.models.card.typefluxCloud.summary" = "Typeflux's built-in LLM service. Sign in with your Typeflux account to use it — no extra API keys required.";
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
@@ -799,6 +805,7 @@
 "settings.models.overview.googleCloud" = "Speech recognition is streamed in real time directly to Google Cloud Speech-to-Text.";
 "settings.models.overview.groq" = "Speech recognition is handled by Groq's fast inference endpoint using the Whisper model.";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket with support for 60+ languages.";
+"settings.models.overview.deepgram" = "Recorded audio is sent to Deepgram Nova-3 for multilingual speech recognition and smart formatting.";
 "settings.models.overview.typefluxOfficial" = "Speech recognition is handled by Typeflux's built-in service.";
 "settings.models.overview.typefluxCloud" = "Rewriting and editing are handled by Typeflux's built-in LLM service.";
 "settings.models.mode.local" = "Local";
@@ -821,6 +828,7 @@
 "settings.models.focused.googleCloud" = "Use this when you want Google Cloud Speech-to-Text with realtime streaming recognition.";
 "settings.models.focused.groq" = "Use this when you want fast cloud transcription with Groq's accelerated Whisper inference.";
 "settings.models.focused.soniox" = "Use this when you want accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
+"settings.models.focused.deepgram" = "Use this when you want accurate multilingual cloud transcription with Deepgram Nova-3.";
 "settings.models.focused.typefluxOfficial" = "Use Typeflux's built-in speech recognition service. Just sign in — no extra configuration needed.";
 "settings.models.focused.typefluxCloud" = "Use Typeflux's built-in LLM service for rewriting and editing. Just sign in — no extra configuration needed.";
 "settings.models.routing" = "Routing behaviour";
@@ -838,6 +846,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text handles real-time streaming ASR directly from this Mac.";
 "settings.models.routing.groq" = "Groq handles dictation through the Whisper-compatible transcription endpoint with accelerated inference.";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 processes recorded audio through the Listen API with multilingual recognition.";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "Authorize Google";

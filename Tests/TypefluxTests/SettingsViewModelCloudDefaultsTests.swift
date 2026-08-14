@@ -56,6 +56,30 @@ final class SettingsViewModelCloudDefaultsTests: XCTestCase {
         XCTAssertEqual(settingsStore.aliCloudModel, "paraformer-realtime-v2")
     }
 
+    func testDeepgramLanguageConfigurationDefaultsFromAppLanguageAndSavesSelection() throws {
+        let suiteName = "SettingsViewModelCloudDefaultsTests.deepgram.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.appLanguage = .simplifiedChinese
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: EmptyHistoryStore(),
+            initialSection: .models,
+            modelManager: NoopOllamaModelManager(),
+            localModelManager: NoopLocalSTTModelManager()
+        )
+
+        XCTAssertEqual(viewModel.deepgramLanguage, .simplifiedChinese)
+
+        viewModel.focusModelProvider(.deepgram)
+        viewModel.setDeepgramLanguage(.automatic)
+        viewModel.applyModelConfiguration(shouldShowToast: false)
+
+        XCTAssertEqual(settingsStore.deepgramLanguage, .automatic)
+        XCTAssertTrue(settingsStore.hasConfiguredDeepgramLanguage)
+    }
+
     func testUnavailableLocalSTTModelFocusDoesNotCommitUntilPrepareSucceeds() async throws {
         let suiteName = "SettingsViewModelCloudDefaultsTests.localSTT.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

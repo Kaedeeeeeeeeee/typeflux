@@ -521,6 +521,8 @@ private final class SingleAudioProcessor {
             defaults.set(model, forKey: "stt.groq.model")
         case .soniox:
             defaults.set(model, forKey: "stt.soniox.model")
+        case .deepgram:
+            defaults.set(model, forKey: "stt.deepgram.model")
         case .appleSpeech, .aliCloud, .typefluxOfficial:
             throw BatchCommandError(message: "--stt-model is not supported for provider \(provider.rawValue).")
         }
@@ -545,6 +547,7 @@ private final class SingleAudioProcessor {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
             typefluxOfficial: TypefluxOfficialTranscriber(),
             typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
                 modelManager: localModelManager
@@ -664,6 +667,8 @@ private final class SingleAudioProcessor {
             settingsStore.groqSTTModel
         case .soniox:
             settingsStore.sonioxModel
+        case .deepgram:
+            settingsStore.deepgramModel
         case .typefluxOfficial:
             "default"
         }
@@ -859,6 +864,7 @@ private final class WAVPersonaBenchmark {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
             typefluxOfficial: TypefluxOfficialTranscriber(),
             typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
                 modelManager: localModelManager
@@ -1096,6 +1102,8 @@ private final class WAVPersonaBenchmark {
             settingsStore.groqSTTModel
         case .soniox:
             settingsStore.sonioxModel
+        case .deepgram:
+            settingsStore.deepgramModel
         case .typefluxOfficial:
             "default"
         }

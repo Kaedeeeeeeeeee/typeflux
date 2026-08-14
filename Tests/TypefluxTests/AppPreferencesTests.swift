@@ -30,6 +30,7 @@ final class AppPreferencesTests: XCTestCase {
                 .freeModel,
                 .localModel,
                 .soniox,
+                .deepgram,
                 .aliCloud,
                 .doubaoRealtime,
                 .googleCloud,
@@ -55,6 +56,25 @@ final class AppPreferencesTests: XCTestCase {
         let others = STTProvider.allCases.filter { $0 != .multimodalLLM }
         for provider in others {
             XCTAssertFalse(provider.handlesPersonaInternally, "\(provider) should not handle persona internally")
+        }
+    }
+
+    func testDeepgramLanguagesExposeDisplayNamesAndExpectedCodes() {
+        XCTAssertEqual(DeepgramLanguage.automatic.languageCode, nil)
+        XCTAssertEqual(DeepgramLanguage.simplifiedChinese.languageCode, "zh-CN")
+        XCTAssertEqual(DeepgramLanguage.traditionalChinese.languageCode, "zh-TW")
+        XCTAssertEqual(DeepgramLanguage.english.languageCode, "en")
+        XCTAssertEqual(DeepgramLanguage.japanese.languageCode, "ja")
+        XCTAssertEqual(DeepgramLanguage.korean.languageCode, "ko")
+
+        XCTAssertEqual(DeepgramLanguage.defaultLanguage(for: .english), .english)
+        XCTAssertEqual(DeepgramLanguage.defaultLanguage(for: .simplifiedChinese), .simplifiedChinese)
+        XCTAssertEqual(DeepgramLanguage.defaultLanguage(for: .traditionalChinese), .traditionalChinese)
+        XCTAssertEqual(DeepgramLanguage.defaultLanguage(for: .japanese), .japanese)
+        XCTAssertEqual(DeepgramLanguage.defaultLanguage(for: .korean), .korean)
+
+        for language in DeepgramLanguage.allCases {
+            XCTAssertFalse(language.displayName.isEmpty)
         }
     }
 

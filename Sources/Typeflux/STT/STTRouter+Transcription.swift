@@ -16,7 +16,7 @@ extension STTRouter {
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         switch settingsStore.sttProvider {
-        case .freeModel, .whisperAPI, .aliCloud, .doubaoRealtime, .googleCloud, .soniox:
+        case .freeModel, .whisperAPI, .aliCloud, .doubaoRealtime, .googleCloud, .soniox, .deepgram:
             try await transcribeWithRemoteProvider(
                 route: remoteSTTRoute(for: settingsStore.sttProvider),
                 audioFile: audioFile,
@@ -216,6 +216,14 @@ extension STTRouter {
                 failureContext: "Soniox ASR failed",
                 autoModelSuccessMessage: "Auto local model succeeded after Soniox ASR failure",
                 appleFallbackMessage: "Falling back to Apple Speech after Soniox ASR failure"
+            )
+        case .deepgram:
+            return RemoteSTTRoute(
+                provider: deepgram,
+                operationName: "Deepgram STT request",
+                failureContext: "Deepgram ASR failed",
+                autoModelSuccessMessage: "Auto local model succeeded after Deepgram ASR failure",
+                appleFallbackMessage: "Falling back to Apple Speech after Deepgram ASR failure"
             )
         default:
             assertionFailure("Unexpected non-remote STT provider")

@@ -80,6 +80,9 @@ final class OnboardingViewModel: ObservableObject {
     @Published var groqSTTModel: String
     @Published var sonioxAPIKey: String
     @Published var sonioxModel: String
+    @Published var deepgramAPIKey: String
+    @Published var deepgramModel: String
+    @Published var deepgramLanguage: DeepgramLanguage
 
     // LLM Config
     @Published var llmProvider: LLMProvider
@@ -166,6 +169,9 @@ final class OnboardingViewModel: ObservableObject {
         groqSTTModel = settingsStore.groqSTTModel
         sonioxAPIKey = settingsStore.sonioxAPIKey
         sonioxModel = settingsStore.sonioxModel
+        deepgramAPIKey = settingsStore.deepgramAPIKey
+        deepgramModel = settingsStore.deepgramModel
+        deepgramLanguage = settingsStore.deepgramLanguage
 
         let initialLLMProvider = settingsStore.llmProvider
         let storedRemoteProvider = settingsStore.llmRemoteProvider
@@ -259,6 +265,8 @@ final class OnboardingViewModel: ObservableObject {
             hasText(groqSTTAPIKey) && hasText(groqSTTModel)
         case .soniox:
             hasText(sonioxAPIKey)
+        case .deepgram:
+            hasText(deepgramAPIKey)
         }
     }
 
@@ -410,6 +418,9 @@ final class OnboardingViewModel: ObservableObject {
         let groqModel = groqSTTModel
         let sonioxKey = sonioxAPIKey
         let sonioxModelValue = sonioxModel
+        let deepgramKey = deepgramAPIKey
+        let deepgramModelValue = deepgramModel
+        let deepgramLanguageValue = deepgramLanguage
         let freeModel = freeSTTModel
 
         sttTestTask = Task {
@@ -457,6 +468,12 @@ final class OnboardingViewModel: ObservableObject {
                         preview = try await SonioxTranscriber.testConnection(
                             apiKey: sonioxKey,
                             model: sonioxModelValue
+                        )
+                    case .deepgram:
+                        preview = try await DeepgramTranscriber.testConnection(
+                            apiKey: deepgramKey,
+                            model: deepgramModelValue,
+                            language: deepgramLanguageValue
                         )
                     case .freeModel:
                         preview = try await FreeSTTTranscriber.testConnection(modelName: freeModel)
@@ -551,8 +568,12 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func setLanguage(_ language: AppLanguage) {
+        let shouldFollowAppLanguage = !settingsStore.hasConfiguredDeepgramLanguage
         appLanguage = language
         settingsStore.appLanguage = language
+        if shouldFollowAppLanguage {
+            deepgramLanguage = DeepgramLanguage.defaultLanguage(for: language)
+        }
         AppLocalization.shared.setLanguage(language)
     }
 
@@ -654,6 +675,10 @@ final class OnboardingViewModel: ObservableObject {
             case .soniox:
                 settingsStore.sonioxAPIKey = sonioxAPIKey
                 settingsStore.sonioxModel = sonioxModel
+            case .deepgram:
+                settingsStore.deepgramAPIKey = deepgramAPIKey
+                settingsStore.deepgramModel = deepgramModel
+                settingsStore.deepgramLanguage = deepgramLanguage
             case .appleSpeech, .typefluxOfficial:
                 break
             }

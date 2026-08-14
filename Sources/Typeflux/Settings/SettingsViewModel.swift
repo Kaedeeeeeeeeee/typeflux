@@ -146,6 +146,9 @@ final class StudioViewModel: ObservableObject {
     @Published var groqSTTModel: String
     @Published var sonioxAPIKey: String
     @Published var sonioxModel: String
+    @Published var deepgramAPIKey: String
+    @Published var deepgramModel: String
+    @Published var deepgramLanguage: DeepgramLanguage
 
     @Published var localSTTModel: LocalSTTModel
     @Published var localSTTFocusedModel: LocalSTTModel
@@ -247,6 +250,7 @@ final class StudioViewModel: ObservableObject {
     private let audioDeviceManager: AudioDeviceManager
     private let onRetryHistory: (HistoryRecord) -> Void
     private let historyRefreshQueue = DispatchQueue(label: "typeflux.settings.history-refresh", qos: .userInitiated)
+    private let pasteboardTextWriter = AsyncPasteboardTextWriter()
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
     private var hotkeySettingsObserver: NSObjectProtocol?
@@ -321,6 +325,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .groqSTT
         case .soniox:
             focusedModelProvider = .soniox
+        case .deepgram:
+            focusedModelProvider = .deepgram
         case .typefluxOfficial:
             focusedModelProvider = .typefluxOfficial
         }
@@ -358,6 +364,9 @@ final class StudioViewModel: ObservableObject {
         groqSTTModel = settingsStore.groqSTTModel
         sonioxAPIKey = settingsStore.sonioxAPIKey
         sonioxModel = settingsStore.sonioxModel
+        deepgramAPIKey = settingsStore.deepgramAPIKey
+        deepgramModel = settingsStore.deepgramModel
+        deepgramLanguage = settingsStore.deepgramLanguage
         localSTTModel = settingsStore.localSTTModel
         localSTTFocusedModel = settingsStore.localSTTModel
         localSTTModelIdentifier = settingsStore.localSTTModelIdentifier
@@ -798,7 +807,7 @@ final class StudioViewModel: ObservableObject {
             case .appleSpeech, .localModel:
                 "Local Processing"
             case .freeModel, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groq,
-                 .soniox, .typefluxOfficial:
+                 .soniox, .deepgram, .typefluxOfficial:
                 "Remote API"
             }
         case .llm:
@@ -830,6 +839,8 @@ final class StudioViewModel: ObservableObject {
                 "Streaming audio to Groq for ultra-fast Whisper transcription."
             case .soniox:
                 "Streaming audio to Soniox for real-time speech recognition."
+            case .deepgram:
+                "Using Deepgram Nova-3 for multilingual cloud speech recognition."
             case .typefluxOfficial:
                 "Using Typeflux's built-in speech recognition service."
             }
@@ -1046,8 +1057,12 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setAppLanguage(_ language: AppLanguage) {
+        let shouldFollowAppLanguage = !settingsStore.hasConfiguredDeepgramLanguage
         appLanguage = language
         settingsStore.appLanguage = language
+        if shouldFollowAppLanguage {
+            deepgramLanguage = DeepgramLanguage.defaultLanguage(for: language)
+        }
         AppLocalization.shared.setLanguage(language)
         if selectedPersonaIsSystem {
             loadPersonaDraft()
@@ -1116,6 +1131,8 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .groqSTT
         case .soniox:
             focusedModelProvider = .soniox
+        case .deepgram:
+            focusedModelProvider = .deepgram
         case .typefluxOfficial:
             focusedModelProvider = .typefluxOfficial
         }
@@ -1417,6 +1434,18 @@ final class StudioViewModel: ObservableObject {
 
     func setSonioxModel(_ value: String) {
         sonioxModel = value; sttConnectionTestState = .idle
+    }
+
+    func setDeepgramAPIKey(_ value: String) {
+        deepgramAPIKey = value; sttConnectionTestState = .idle
+    }
+
+    func setDeepgramModel(_ value: String) {
+        deepgramModel = value; sttConnectionTestState = .idle
+    }
+
+    func setDeepgramLanguage(_ value: DeepgramLanguage) {
+        deepgramLanguage = value; sttConnectionTestState = .idle
     }
 
     func setLocalSTTModelIdentifier(_ value: String) {
@@ -2383,9 +2412,7 @@ final class StudioViewModel: ObservableObject {
             !transcriptText.isEmpty
         else { return }
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(transcriptText, forType: .string)
-        showToast(L("history.toast.transcriptCopied"))
+        copyHistoryTextToPasteboard(transcriptText)
     }
 
     func copyHistoryResult(id: UUID) {
@@ -2395,9 +2422,15 @@ final class StudioViewModel: ObservableObject {
             !finalText.isEmpty
         else { return }
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(finalText, forType: .string)
-        showToast(L("history.toast.transcriptCopied"))
+        copyHistoryTextToPasteboard(finalText)
+    }
+
+    private func copyHistoryTextToPasteboard(_ text: String) {
+        let successMessage = L("history.toast.transcriptCopied")
+        let failureMessage = L("history.toast.copyFailed")
+        pasteboardTextWriter.write(text) { [weak self] didWrite in
+            self?.showToast(didWrite ? successMessage : failureMessage)
+        }
     }
 
     func downloadAudio(id: UUID) {
@@ -2516,6 +2549,10 @@ final class StudioViewModel: ObservableObject {
         case .soniox:
             settingsStore.sonioxAPIKey = sonioxAPIKey
             settingsStore.sonioxModel = sonioxModel
+        case .deepgram:
+            settingsStore.deepgramAPIKey = deepgramAPIKey
+            settingsStore.deepgramModel = deepgramModel
+            settingsStore.deepgramLanguage = deepgramLanguage
         case .appleSpeech, .localSTT, .typefluxOfficial, .typefluxCloud:
             break
         }
@@ -2644,7 +2681,7 @@ final class StudioViewModel: ObservableObject {
                             if payload.done || collected.count >= 60 { break }
                         }
                     case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-                         .googleCloud, .groqSTT, .soniox, .typefluxOfficial:
+                         .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial:
                         return (firstTokenDate, collected)
                     }
 
@@ -2692,6 +2729,9 @@ final class StudioViewModel: ObservableObject {
         let capturedGroqSTTModel = groqSTTModel
         let capturedSonioxAPIKey = sonioxAPIKey
         let capturedSonioxModel = sonioxModel
+        let capturedDeepgramAPIKey = deepgramAPIKey
+        let capturedDeepgramModel = deepgramModel
+        let capturedDeepgramLanguage = deepgramLanguage
 
         sttTestTask = Task {
             let startDate = Date()
@@ -2742,6 +2782,12 @@ final class StudioViewModel: ObservableObject {
                         try await SonioxTranscriber.testConnection(
                             apiKey: capturedSonioxAPIKey,
                             model: capturedSonioxModel
+                        )
+                    case .deepgram:
+                        try await DeepgramTranscriber.testConnection(
+                            apiKey: capturedDeepgramAPIKey,
+                            model: capturedDeepgramModel,
+                            language: capturedDeepgramLanguage
                         )
                     case .typefluxOfficial:
                         try await TypefluxOfficialTranscriber.testConnection()
@@ -2885,6 +2931,8 @@ final class StudioViewModel: ObservableObject {
                 .groqSTT
             case .soniox:
                 .soniox
+            case .deepgram:
+                .deepgram
             case .typefluxOfficial:
                 .typefluxOfficial
             }

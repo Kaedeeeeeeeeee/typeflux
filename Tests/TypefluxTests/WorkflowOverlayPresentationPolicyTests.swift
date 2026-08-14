@@ -2,6 +2,10 @@
 import XCTest
 
 final class WorkflowOverlayPresentationPolicyTests: XCTestCase {
+    func testShouldNotShowRecordingTranscriptionPreview() {
+        XCTAssertFalse(WorkflowOverlayPresentationPolicy.shouldShowRecordingTranscriptionPreview())
+    }
+
     func testShowProcessingAfterRecordingAlwaysLeavesRecordingState() {
         XCTAssertTrue(WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording())
     }

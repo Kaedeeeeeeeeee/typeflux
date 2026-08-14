@@ -472,6 +472,25 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testShouldSkipClipboardSelectionFallbackForEmptyCaretRange() {
+        XCTAssertFalse(
+            AXTextInjector.shouldTryClipboardSelectionFallback(
+                selectedRange: CFRange(location: 12, length: 0)
+            )
+        )
+    }
+
+    func testShouldTryClipboardSelectionFallbackForUnknownOrNonEmptyRange() {
+        XCTAssertTrue(
+            AXTextInjector.shouldTryClipboardSelectionFallback(selectedRange: nil)
+        )
+        XCTAssertTrue(
+            AXTextInjector.shouldTryClipboardSelectionFallback(
+                selectedRange: CFRange(location: 12, length: 4)
+            )
+        )
+    }
+
     func testShouldNotTreatNonEmptyValueAsUnreadable() {
         let result = AXTextInjector.shouldTreatAXValueAsUnreadable(
             role: "AXGroup",
@@ -480,6 +499,146 @@ final class AXTextInjectorTests: XCTestCase {
         )
 
         XCTAssertFalse(result)
+    }
+
+    func testReplacingAXValueUsesUTF16SelectionRange() {
+        let result = AXTextInjector.replacingAXValue(
+            "A😀B",
+            selectedRange: CFRange(location: 1, length: 2),
+            with: "中文"
+        )
+
+        XCTAssertEqual(result?.text, "A中文B")
+        XCTAssertEqual(result?.caretLocation, 3)
+    }
+
+    func testReplacingAXValueRejectsOutOfBoundsRange() {
+        let result = AXTextInjector.replacingAXValue(
+            "hello",
+            selectedRange: CFRange(location: 4, length: 2),
+            with: "world"
+        )
+
+        XCTAssertNil(result)
+    }
+
+    func testUnicodeEventChunksPreserveCharactersAndUTF16Limit() {
+        let chunks = AXTextInjector.unicodeEventChunks(
+            for: "ab😀cd",
+            maximumUTF16Length: 3
+        )
+
+        XCTAssertEqual(chunks.joined(), "ab😀cd")
+        XCTAssertEqual(chunks, ["ab", "😀c", "d"])
+        XCTAssertTrue(chunks.allSatisfy { $0.utf16.count <= 3 })
+    }
+
+    func testCanUseVerifiedUnicodeInputForMatchingReadableTarget() {
+        let snapshot = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Notes",
+            role: "AXTextArea",
+            text: "Hello",
+            selectedRange: CFRange(location: 5, length: 0),
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil,
+            textSource: "ax-value"
+        )
+
+        XCTAssertTrue(
+            AXTextInjector.canUseVerifiedUnicodeInput(
+                snapshot: snapshot,
+                targetProcessID: 42
+            )
+        )
+        XCTAssertFalse(
+            AXTextInjector.canUseVerifiedUnicodeInput(
+                snapshot: snapshot,
+                targetProcessID: 99
+            )
+        )
+    }
+
+    func testEvaluateDirectInputVerificationSucceedsWhenTextChanges() {
+        let before = CurrentInputTextSnapshot(
+            processID: 42,
+            text: "Hello",
+            isEditable: true,
+            isFocusedTarget: true,
+            textSource: "ax-value"
+        )
+        let after = CurrentInputTextSnapshot(
+            processID: 42,
+            text: "Hello world",
+            isEditable: true,
+            isFocusedTarget: true,
+            textSource: "ax-value"
+        )
+
+        XCTAssertEqual(
+            AXTextInjector.evaluateDirectInputVerification(
+                targetProcessID: 42,
+                before: before,
+                after: after
+            ),
+            .success
+        )
+    }
+
+    func testEvaluateDirectInputVerificationFailsWhenReadableTextIsUnchanged() {
+        let snapshot = CurrentInputTextSnapshot(
+            processID: 42,
+            text: "Hello",
+            isEditable: true,
+            isFocusedTarget: true,
+            textSource: "ax-value"
+        )
+
+        XCTAssertEqual(
+            AXTextInjector.evaluateDirectInputVerification(
+                targetProcessID: 42,
+                before: snapshot,
+                after: snapshot
+            ),
+            .failure("input-text-unchanged")
+        )
+    }
+
+    func testShouldFailIndeterminatePasteWhenReliableInputRemainsUnchanged() {
+        let snapshot = CurrentInputTextSnapshot(
+            processID: 42,
+            text: "Hello",
+            isEditable: true,
+            isFocusedTarget: true,
+            textSource: "ax-value"
+        )
+
+        XCTAssertTrue(
+            AXTextInjector.shouldFailIndeterminatePasteVerification(
+                targetProcessID: 42,
+                before: snapshot,
+                after: snapshot
+            )
+        )
+    }
+
+    func testShouldNotFailIndeterminatePasteForUnreadableInput() {
+        let snapshot = CurrentInputTextSnapshot(
+            processID: 42,
+            text: nil,
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: "missing-ax-value"
+        )
+
+        XCTAssertFalse(
+            AXTextInjector.shouldFailIndeterminatePasteVerification(
+                targetProcessID: 42,
+                before: snapshot,
+                after: snapshot
+            )
+        )
     }
 
     func testEvaluatePasteVerificationReturnsSuccessWhenInsertedTextAppears() {

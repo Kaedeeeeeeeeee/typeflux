@@ -133,6 +133,27 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testDeepgramConfigurationRequiresAPIKeyAndPersistsDefaults() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        viewModel.currentStep = .stt
+        viewModel.selectSTTProvider(.deepgram)
+        viewModel.deepgramAPIKey = ""
+
+        XCTAssertFalse(viewModel.isSTTConfigurationComplete)
+
+        viewModel.deepgramAPIKey = "dg-test"
+        viewModel.deepgramModel = ""
+        viewModel.deepgramLanguage = .japanese
+        viewModel.advance()
+
+        XCTAssertEqual(viewModel.currentStep, .llm)
+        XCTAssertEqual(store.sttProvider, .deepgram)
+        XCTAssertEqual(store.deepgramAPIKey, "dg-test")
+        XCTAssertEqual(store.deepgramModel, DeepgramASRDefaults.model)
+        XCTAssertEqual(store.deepgramLanguage, .japanese)
+    }
+
+    @MainActor
     func testLocalSTTCanAdvanceWithoutManualCredentialConfiguration() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
         viewModel.currentStep = .stt

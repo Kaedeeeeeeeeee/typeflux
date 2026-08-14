@@ -462,7 +462,9 @@ final class WorkflowController {
                     Task { @MainActor [weak self] in
                         guard let self, isRecording else { return }
                         latestRecordingPreviewText = trimmed
-                        overlayController.updateRecordingPreviewText(trimmed)
+                        if WorkflowOverlayPresentationPolicy.shouldShowRecordingTranscriptionPreview() {
+                            overlayController.updateRecordingPreviewText(trimmed)
+                        }
                     }
                 }
             } catch {
@@ -1031,7 +1033,9 @@ final class WorkflowController {
                         Task { @MainActor [weak self] in
                             guard let self, isRecording else { return }
                             latestRecordingPreviewText = trimmed
-                            overlayController.updateRecordingPreviewText(trimmed)
+                            if WorkflowOverlayPresentationPolicy.shouldShowRecordingTranscriptionPreview() {
+                                overlayController.updateRecordingPreviewText(trimmed)
+                            }
                         }
                     }
                 )

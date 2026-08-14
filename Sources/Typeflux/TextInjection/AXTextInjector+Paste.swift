@@ -76,15 +76,15 @@ extension AXTextInjector {
                    replaceSelection: true,
                    selectionRange: context.range,
                    beforeSnapshot: beforeSnapshot
-               ) {
+                ) {
                 NetworkDebugLogger.logMessage(
-                    "[Text Injection] replace completed via AX selected-text write"
+                    "[Text Injection] replace completed via AX direct input"
                 )
                 latestSelectionContext = nil
                 return
             }
             NetworkDebugLogger.logMessage(
-                "[Text Injection] AX selected-text write unavailable or unverified, falling back"
+                "[Text Injection] AX direct input unavailable or unverified, falling back"
             )
         }
 
@@ -122,6 +122,14 @@ extension AXTextInjector {
         selectionRange: CFRange?,
         beforeSnapshot: CurrentInputTextSnapshot
     ) throws -> Bool {
+        if try insertTextViaWritableAXValue(
+            text,
+            into: element,
+            selectionRange: selectionRange
+        ) {
+            return true
+        }
+
         if replaceSelection {
             if let selectionRange {
                 _ = setSelectedTextRange(selectionRange, on: element)
@@ -155,7 +163,11 @@ extension AXTextInjector {
             }
         }
 
-        return false
+        return try insertTextViaUnicodeEvents(
+            text,
+            targetProcessID: frontmostProcessID(),
+            beforeSnapshot: beforeSnapshot
+        )
     }
 
     func verifyAXWriteApplied(
@@ -336,9 +348,11 @@ extension AXTextInjector {
         previousSnapshot: PasteboardSnapshot
     ) throws {
         var lastFailureReason: String?
+        var lastSnapshot: CurrentInputTextSnapshot?
         for attempt in 0 ..< Self.pasteVerificationAttempts {
             usleep(Self.pasteVerificationPollIntervalMicroseconds)
             let afterSnapshot = readCurrentInputTextSnapshot()
+            lastSnapshot = afterSnapshot
             let verification = Self.evaluatePasteVerification(
                 insertedText: text,
                 replaceSelection: replaceSelection,
@@ -377,6 +391,17 @@ extension AXTextInjector {
             delayNanoseconds: Self.unverifiedPasteRestoreDelayNanoseconds
         )
 
+        if lastFailureReason == nil,
+           let beforeSnapshot,
+           let lastSnapshot,
+           Self.shouldFailIndeterminatePasteVerification(
+               targetProcessID: targetPID,
+               before: beforeSnapshot,
+               after: lastSnapshot
+           ) {
+            lastFailureReason = "input-text-unchanged"
+        }
+
         if let lastFailureReason {
             let finalSnapshot = readCurrentInputTextSnapshot()
             NetworkDebugLogger.logMessage(
@@ -395,6 +420,20 @@ extension AXTextInjector {
                 ]
             )
         }
+    }
+
+    static func shouldFailIndeterminatePasteVerification(
+        targetProcessID: pid_t?,
+        before: CurrentInputTextSnapshot,
+        after: CurrentInputTextSnapshot
+    ) -> Bool {
+        guard before.textSource == "ax-value", after.textSource == "ax-value" else { return false }
+        guard before.isEditable, before.isFocusedTarget else { return false }
+        guard after.isEditable, after.isFocusedTarget else { return false }
+        guard let beforeText = before.text, let afterText = after.text else { return false }
+        guard beforeText == afterText else { return false }
+        guard let targetProcessID else { return false }
+        return before.processID == targetProcessID && after.processID == targetProcessID
     }
 
     static func evaluatePasteVerification(

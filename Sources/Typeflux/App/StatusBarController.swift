@@ -248,7 +248,9 @@ final class StatusBarController: NSObject {
         appearanceItem.submenu = buildAppearanceMenu()
         menu.addItem(appearanceItem)
         menu.addItem(makeSettingsItem())
-        menu.addItem(makeUpdateMenuItem())
+        if AutoUpdateAvailability.isEnabled {
+            menu.addItem(makeUpdateMenuItem())
+        }
         if let downloadItem = makeLocalModelDownloadMenuItem() {
             menu.addItem(downloadItem)
         }

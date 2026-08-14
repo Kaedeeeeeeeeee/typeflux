@@ -269,6 +269,7 @@
 "provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
+"provider.stt.deepgram" = "Deepgram";
 "provider.stt.typefluxOfficial" = "Typeflux Cloud";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "カスタム";
@@ -506,6 +507,7 @@
 "history.clearDialog.message" = "すべての履歴と関連する音声ファイルが完全に削除されます。この操作は元に戻せません。";
 "history.toast.retryStarted" = "再試行が開始されました。";
 "history.toast.transcriptCopied" = "トランスクリプトをコピーしました。";
+"history.toast.copyFailed" = "トランスクリプトをコピーできませんでした。";
 "history.toast.audioUnavailable" = "音声ファイルが利用できません。";
 "history.toast.audioDownloaded" = "音声がダウンロードされました。";
 "history.toast.audioDownloadFailed" = "音声のダウンロードに失敗しました。";
@@ -715,6 +717,7 @@
 "settings.models.useDoubao" = "豆包を使用する";
 "settings.models.useGroq" = "Groq を使用する";
 "settings.models.useSoniox" = "Use Soniox";
+"settings.models.useDeepgram" = "Deepgram を使用";
 "settings.models.useTypefluxOfficial" = "Typeflux 公式を使用する";
 "settings.models.useTypefluxCloud" = "Typeflux Cloud を使用する";
 "settings.models.badge.local" = "ローカル";
@@ -732,6 +735,9 @@
 "settings.models.card.googleCloud.summary" = "Google Cloud Speech-to-Text によるリアルタイムのストリーミング音声認識。";
 "settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 文字起こし。既定モデルは whisper-large-v3-turbo。";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages.";
+"settings.models.card.deepgram.summary" = "Deepgram Nova-3 による高精度な多言語クラウド文字起こしと自動スマートフォーマット。";
+"settings.models.deepgram.language" = "音声言語";
+"settings.models.deepgram.languageHint" = "自動モードは録音ごとに1つの主要言語を検出します。Deepgram は現在、中国語・日本語・英語のコードスイッチングを1つのモデルで認識できません。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 内蔵の音声認識サービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 内蔵の大規模言語モデルサービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
 "settings.models.card.ollama.summary" = "オプションの自動モデル準備を使用して、ローカルで書き換えおよび編集コマンドを実行します。";
@@ -788,6 +794,7 @@
 "settings.models.overview.googleCloud" = "音声認識は Google Cloud Speech-to-Text に直接リアルタイムでストリーミングされます。";
 "settings.models.overview.groq" = "音声認識は、Groq の高速推論エンドポイントが Whisper モデルを使用して処理します。";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket.";
+"settings.models.overview.deepgram" = "録音を Deepgram Nova-3 に送信し、多言語音声認識とスマートフォーマットを行います。";
 "settings.models.overview.typefluxOfficial" = "音声認識は Typeflux の内蔵サービスで処理されます。";
 "settings.models.overview.typefluxCloud" = "テキストの書き直しと編集は Typeflux の内蔵 LLM サービスで処理されます。";
 "settings.models.mode.local" = "ローカル";
@@ -810,6 +817,7 @@
 "settings.models.focused.googleCloud" = "Google Cloud Speech-to-Text のリアルタイム ストリーミング認識が必要な場合にこれを使用します。";
 "settings.models.focused.groq" = "Groq の高速推論を使用した迅速なクラウド文字起こしが必要な場合にこれを使用します。";
 "settings.models.focused.soniox" = "Use this for accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
+"settings.models.focused.deepgram" = "Deepgram Nova-3 で高精度な多言語クラウド文字起こしを行う場合に使用します。";
 "settings.models.focused.typefluxOfficial" = "Typeflux 内蔵の音声認識サービスを使用します。サインインするだけで、追加の設定は不要です。";
 "settings.models.focused.typefluxCloud" = "Typeflux 内蔵の LLM サービスを使用してテキストの書き直しと編集を行います。サインインするだけで、追加の設定は不要です。";
 "settings.models.routing" = "ルーティング動作";
@@ -827,6 +835,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text はこの Mac から直接リアルタイム ストリーミング ASR を処理します。";
 "settings.models.routing.groq" = "Groq は、Whisper 互換の文字起こしエンドポイントを使用した高速推論でディクテーションを処理します。";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 は Listen API を通じて録音を処理し、多言語認識を行います。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "Google を認可";

@@ -121,7 +121,7 @@ final class StudioModelsTests: XCTestCase {
     func testSTTProvidersDomain() {
         let sttProviders: [StudioModelProviderID] = [
             .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-            .googleCloud
+            .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial
         ]
         for provider in sttProviders {
             XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")
@@ -232,7 +232,7 @@ extension StudioModelsTests {
     func testSTTProvidersDomainIsSTT() {
         let sttProviders: [StudioModelProviderID] = [
             .whisperAPI, .appleSpeech, .localSTT, .doubaoRealtime, .aliCloud, .freeSTT, .multimodalLLM,
-            .googleCloud
+            .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial
         ]
         for provider in sttProviders {
             XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")

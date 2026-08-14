@@ -2670,21 +2670,23 @@ struct StudioView: View {
                         .toggleStyle(.switch)
                     }
 
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    if AutoUpdateAvailability.isEnabled {
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoUpdate.title"),
-                        subtitle: L("settings.advanced.autoUpdate.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.autoUpdateEnabled },
-                                set: viewModel.setAutoUpdateEnabled
+                        StudioSettingRow(
+                            title: L("settings.advanced.autoUpdate.title"),
+                            subtitle: L("settings.advanced.autoUpdate.subtitle")
+                        ) {
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { viewModel.autoUpdateEnabled },
+                                    set: viewModel.setAutoUpdateEnabled
+                                )
                             )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                        }
                     }
                 }
             }
@@ -4728,6 +4730,8 @@ struct StudioView: View {
                 .groqSTT
             case .soniox:
                 .soniox
+            case .deepgram:
+                .deepgram
             case .typefluxOfficial:
                 .typefluxOfficial
             }
@@ -4861,6 +4865,17 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .soniox,
                     isMuted: false,
                     actionTitle: L("settings.models.useSoniox")
+                ),
+                StudioModelCard(
+                    id: StudioModelProviderID.deepgram.rawValue,
+                    name: STTProvider.deepgram.displayName,
+                    summary: L("settings.models.card.deepgram.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.deepgramModel.isEmpty
+                        ? L("settings.models.modelNotConfigured") : viewModel.deepgramModel,
+                    isSelected: viewModel.sttProvider == .deepgram,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useDeepgram")
                 )
             ]
         )
@@ -5048,7 +5063,7 @@ struct StudioView: View {
 
                 if [
                     StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
+                    .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         Spacer()
@@ -5067,7 +5082,7 @@ struct StudioView: View {
                             }
                         } else if [
                             StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
+                            .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial
                         ].contains(viewModel.focusedModelProvider),
                             !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
                             StudioButton(
@@ -5096,7 +5111,7 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
+                        .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram, .typefluxOfficial
                     ].contains(viewModel.focusedModelProvider),
                         !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
                         connectionTestResultView(viewModel.sttConnectionTestState)
@@ -5556,6 +5571,48 @@ struct StudioView: View {
                         text: Binding(get: { viewModel.sonioxModel }, set: viewModel.setSonioxModel),
                         suggestions: SonioxASRDefaults.suggestedModels
                     )
+                }
+
+            case .deepgram:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    StudioTextInputCard(
+                        label: L("common.apiKey"), placeholder: "Deepgram API key",
+                        text: Binding(
+                            get: { viewModel.deepgramAPIKey },
+                            set: viewModel.setDeepgramAPIKey
+                        ),
+                        secure: true
+                    ) {
+                        if let url = sttProviderAPIKeyURL(.deepgram) {
+                            apiKeyHelpButton(url: url)
+                        }
+                    }
+                    StudioSuggestedTextInputCard(
+                        label: L("common.model"),
+                        placeholder: DeepgramASRDefaults.model,
+                        text: Binding(
+                            get: { viewModel.deepgramModel },
+                            set: viewModel.setDeepgramModel
+                        ),
+                        suggestions: DeepgramASRDefaults.suggestedModels
+                    )
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        Text(L("settings.models.deepgram.language"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        StudioMenuPicker(
+                            options: DeepgramLanguage.allCases.map { ($0.displayName, $0) },
+                            selection: Binding(
+                                get: { viewModel.deepgramLanguage },
+                                set: viewModel.setDeepgramLanguage
+                            ),
+                            width: 320
+                        )
+                        Text(L("settings.models.deepgram.languageHint"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }
@@ -6093,6 +6150,8 @@ struct StudioView: View {
             !viewModel.groqSTTAPIKey.isEmpty
         case .soniox:
             !viewModel.sonioxAPIKey.isEmpty
+        case .deepgram:
+            !viewModel.deepgramAPIKey.isEmpty
         case .typefluxOfficial:
             authState.isLoggedIn
         case .typefluxCloud:
@@ -6153,6 +6212,8 @@ struct StudioView: View {
             viewModel.setSTTProvider(.groq)
         case .soniox:
             viewModel.setSTTProvider(.soniox)
+        case .deepgram:
+            viewModel.setSTTProvider(.deepgram)
         case .typefluxOfficial:
             viewModel.setSTTProvider(.typefluxOfficial)
         case .typefluxCloud:
@@ -6216,6 +6277,8 @@ struct StudioView: View {
             "cloud"
         case .soniox:
             "waveform.and.mic"
+        case .deepgram:
+            "waveform.badge.magnifyingglass"
         case .typefluxOfficial:
             "infinity"
         case .typefluxCloud:
@@ -6268,6 +6331,8 @@ struct StudioView: View {
             L("settings.models.overview.groq")
         case .soniox:
             L("settings.models.overview.soniox")
+        case .deepgram:
+            L("settings.models.overview.deepgram")
         case .typefluxOfficial:
             L("settings.models.overview.typefluxOfficial")
         }
@@ -6302,6 +6367,8 @@ struct StudioView: View {
             STTProvider.groq.displayName
         case .soniox:
             STTProvider.soniox.displayName
+        case .deepgram:
+            STTProvider.deepgram.displayName
         case .typefluxOfficial:
             STTProvider.typefluxOfficial.displayName
         }
@@ -6313,7 +6380,8 @@ struct StudioView: View {
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram,
+             .typefluxOfficial,
              .typefluxCloud:
             L("settings.models.mode.remote")
         }
@@ -6325,7 +6393,8 @@ struct StudioView: View {
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram,
+             .typefluxOfficial,
              .typefluxCloud:
             StudioTheme.accent
         }
@@ -6337,7 +6406,8 @@ struct StudioView: View {
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram,
+             .typefluxOfficial,
              .typefluxCloud:
             StudioTheme.accentSoft
         }
@@ -6372,6 +6442,8 @@ struct StudioView: View {
             URL(string: "https://platform.openai.com/api-keys")
         case .soniox:
             URL(string: "https://console.soniox.com/")
+        case .deepgram:
+            URL(string: "https://console.deepgram.com/")
         case .doubaoRealtime, .googleCloud, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
             nil
         }
@@ -6458,6 +6530,8 @@ struct StudioView: View {
                 ? OpenAIAudioModelCatalog.groqWhisperModels[0] : viewModel.groqSTTModel
         case .soniox:
             viewModel.sonioxModel.isEmpty ? SonioxASRDefaults.model : viewModel.sonioxModel
+        case .deepgram:
+            viewModel.deepgramModel.isEmpty ? DeepgramASRDefaults.model : viewModel.deepgramModel
         case .typefluxOfficial:
             STTProvider.typefluxOfficial.displayName
         case .typefluxCloud:
@@ -6497,6 +6571,8 @@ struct StudioView: View {
             STTProvider.groq.displayName
         case .soniox:
             STTProvider.soniox.displayName
+        case .deepgram:
+            STTProvider.deepgram.displayName
         case .typefluxOfficial:
             STTProvider.typefluxOfficial.displayName
         case .typefluxCloud:
@@ -6534,6 +6610,8 @@ struct StudioView: View {
             L("settings.models.focused.groq")
         case .soniox:
             L("settings.models.focused.soniox")
+        case .deepgram:
+            L("settings.models.focused.deepgram")
         case .typefluxOfficial:
             L("settings.models.focused.typefluxOfficial")
         case .typefluxCloud:
@@ -6574,6 +6652,8 @@ struct StudioView: View {
             L("settings.models.routing.groq")
         case .soniox:
             L("settings.models.routing.soniox")
+        case .deepgram:
+            L("settings.models.routing.deepgram")
         case .typefluxOfficial:
             L("settings.models.routing.typefluxOfficial")
         case .typefluxCloud:

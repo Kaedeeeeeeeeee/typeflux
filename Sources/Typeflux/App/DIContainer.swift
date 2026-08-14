@@ -98,6 +98,7 @@ final class DIContainer {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
             typefluxOfficial: TypefluxOfficialTranscriber(),
             typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
                 modelManager: localModelManager
