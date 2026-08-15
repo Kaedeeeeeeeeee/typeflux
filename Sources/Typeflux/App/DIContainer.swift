@@ -29,7 +29,6 @@ final class DIContainer {
     let agentExecutionRegistry: AgentExecutionRegistry
     let agentJobsWindowController: AgentJobsWindowController
     let mcpRegistry: MCPRegistry
-    let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
     let outputPostProcessor: OutputPostProcessing
 
     // swiftlint:disable:next function_body_length
@@ -68,7 +67,6 @@ final class DIContainer {
             ollama: OllamaAgentService()
         )
         notificationService = SystemLocalNotificationService.shared
-        cloudLoginSyncCoordinator = CloudLoginSyncCoordinator(settingsStore: settingsStore)
         localModelManager = LocalModelManager()
         bundledModelAutoSetup = BundledModelAutoSetup(linker: localModelManager)
         autoModelDownloadService = AutoModelDownloadService(
@@ -98,10 +96,7 @@ final class DIContainer {
                 modelOverride: { [settingsStore] in settingsStore.groqSTTModel }
             ),
             soniox: SonioxTranscriber(settingsStore: settingsStore),
-            typefluxOfficial: TypefluxOfficialTranscriber(),
-            typefluxCloudLoginFallbackLocalModel: DefaultSenseVoiceFallbackTranscriber(
-                modelManager: localModelManager
-            ),
+            deepgram: DeepgramTranscriber(settingsStore: settingsStore),
             autoModelDownloadService: autoModelDownloadService
         )
     }

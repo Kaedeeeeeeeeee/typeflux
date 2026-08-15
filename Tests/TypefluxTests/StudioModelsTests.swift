@@ -5,7 +5,7 @@ final class StudioModelsTests: XCTestCase {
     // MARK: - StudioSection
 
     func testStudioSectionAllCasesCount() {
-        XCTAssertEqual(StudioSection.allCases.count, 8)
+        XCTAssertEqual(StudioSection.allCases.count, 7)
     }
 
     func testStudioSectionId() {
@@ -63,7 +63,6 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertNil(StudioSection.personas.subheading)
         XCTAssertNil(StudioSection.history.subheading)
         XCTAssertNil(StudioSection.settings.subheading)
-        XCTAssertNil(StudioSection.account.subheading)
     }
 
     func testSubheadingNonNilForOtherSections() {
@@ -121,7 +120,7 @@ final class StudioModelsTests: XCTestCase {
     func testSTTProvidersDomain() {
         let sttProviders: [StudioModelProviderID] = [
             .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
-            .googleCloud
+            .googleCloud, .groqSTT, .soniox, .deepgram
         ]
         for provider in sttProviders {
             XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")
@@ -145,30 +144,24 @@ final class StudioModelsTests: XCTestCase {
         }
     }
 
-    func testTypefluxOfficialDoesNotShowManualSaveButton() {
-        XCTAssertFalse(StudioModelProviderID.typefluxOfficial.showsManualSaveButton)
-    }
-
-    func testOtherProvidersStillShowManualSaveButton() {
+    func testProvidersShowManualSaveButton() {
         XCTAssertTrue(StudioModelProviderID.whisperAPI.showsManualSaveButton)
         XCTAssertTrue(StudioModelProviderID.openAI.showsManualSaveButton)
     }
 
-    func testTypefluxOfficialRequiresLoginForConnectionTest() {
-        XCTAssertTrue(StudioModelProviderID.typefluxOfficial.requiresLoginForConnectionTest)
-        XCTAssertTrue(StudioModelProviderID.typefluxCloud.requiresLoginForConnectionTest)
+    func testProvidersDoNotRequireAppLoginForConnectionTest() {
         XCTAssertFalse(StudioModelProviderID.whisperAPI.requiresLoginForConnectionTest)
+        XCTAssertFalse(StudioModelProviderID.openAI.requiresLoginForConnectionTest)
     }
 
-    func testTypefluxOfficialUsesExpandedLogo() {
-        XCTAssertTrue(StudioModelProviderID.typefluxOfficial.usesExpandedLogo)
+    func testOpenCodeProvidersUseExpandedLogo() {
+        XCTAssertTrue(StudioModelProviderID.openCodeZen.usesExpandedLogo)
         XCTAssertFalse(StudioModelProviderID.openAI.usesExpandedLogo)
     }
 
-    func testTypefluxProvidersUseTypefluxBranding() {
-        XCTAssertTrue(StudioModelProviderID.typefluxOfficial.usesTypefluxBranding)
-        XCTAssertTrue(StudioModelProviderID.typefluxCloud.usesTypefluxBranding)
+    func testProvidersDoNotUseTypefluxBranding() {
         XCTAssertFalse(StudioModelProviderID.openAI.usesTypefluxBranding)
+        XCTAssertFalse(StudioModelProviderID.localSTT.usesTypefluxBranding)
     }
 
     // MARK: - HistoryPipelineStatPresentationItem
@@ -232,7 +225,7 @@ extension StudioModelsTests {
     func testSTTProvidersDomainIsSTT() {
         let sttProviders: [StudioModelProviderID] = [
             .whisperAPI, .appleSpeech, .localSTT, .doubaoRealtime, .aliCloud, .freeSTT, .multimodalLLM,
-            .googleCloud
+            .googleCloud, .groqSTT, .soniox, .deepgram
         ]
         for provider in sttProviders {
             XCTAssertEqual(provider.domain, .stt, "\(provider) should be in STT domain")

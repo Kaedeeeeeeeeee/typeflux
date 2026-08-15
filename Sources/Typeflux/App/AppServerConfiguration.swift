@@ -2,9 +2,7 @@ import Foundation
 
 enum AppServerConfiguration {
     private static let defaultBaseURLs = ["https://api.typeflux.app", "https://typeflux-api.aicode.cc"]
-    private static let defaultGoogleOAuthClientID = "567492048493-bh84p3mfjfjimsfvga7pil3cc373d389.apps.googleusercontent.com"
     private static let defaultGoogleCloudOAuthClientID = "86325451552-drgdrf01ffjo0on25a1psmg4mpvlo8gi.apps.googleusercontent.com"
-    private static let defaultGithubOAuthClientID = "Ov23lidqnPDEOAvE8RvH"
 
     private static func configuredValue(
         environmentKey: String,
@@ -20,7 +18,7 @@ enum AppServerConfiguration {
         return defaultValue
     }
 
-    /// Ordered list of Typeflux Cloud server base URLs.
+    /// Ordered list of application service base URLs.
     /// Sources, in priority order:
     /// 1. `TYPEFLUX_API_URLS` env var or Info.plist key — comma-separated list
     /// 2. `TYPEFLUX_API_URL` env var or Info.plist key — single URL (legacy)
@@ -85,32 +83,8 @@ enum AppServerConfiguration {
         return result.isEmpty ? nil : result
     }
 
-    /// Google OAuth 2.0 Client ID from Google Cloud Console.
-    /// Recommended: create an iOS-type client (no secret required).
-    /// Desktop-type clients also work but require GOOGLE_OAUTH_CLIENT_SECRET as well.
-    /// When empty, Google Sign-In is disabled in the login UI.
-    static var googleOAuthClientID: String {
-        configuredValue(
-            environmentKey: "GOOGLE_OAUTH_CLIENT_ID",
-            infoPlistKey: "GOOGLE_OAUTH_CLIENT_ID",
-            default: defaultGoogleOAuthClientID
-        )
-    }
-
-    /// Google OAuth 2.0 Client Secret — only required for Desktop-type clients.
-    /// iOS-type clients are public clients and do not need a secret.
-    /// Leave empty (default) when using an iOS-type client ID.
-    static var googleOAuthClientSecret: String {
-        configuredValue(
-            environmentKey: "GOOGLE_OAUTH_CLIENT_SECRET",
-            infoPlistKey: "GOOGLE_OAUTH_CLIENT_SECRET",
-            default: ""
-        )
-    }
-
     /// Google OAuth 2.0 Client ID used only for direct Google Cloud Speech-to-Text access.
-    /// Keep this separate from Google Sign-In so adding Cloud API scopes does not affect login verification.
-    /// Falls back to the sign-in client until a dedicated Cloud client is configured.
+    /// This credential is used only for direct Google Cloud Speech-to-Text access.
     static var googleCloudOAuthClientID: String {
         configuredValue(
             environmentKey: "GOOGLE_CLOUD_OAUTH_CLIENT_ID",
@@ -125,17 +99,7 @@ enum AppServerConfiguration {
         configuredValue(
             environmentKey: "GOOGLE_CLOUD_OAUTH_CLIENT_SECRET",
             infoPlistKey: "GOOGLE_CLOUD_OAUTH_CLIENT_SECRET",
-            default: googleOAuthClientSecret
-        )
-    }
-
-    /// GitHub OAuth App client ID from https://github.com/settings/developers.
-    /// When empty, GitHub Sign-In is disabled in the login UI.
-    static var githubOAuthClientID: String {
-        configuredValue(
-            environmentKey: "GITHUB_OAUTH_CLIENT_ID",
-            infoPlistKey: "GITHUB_OAUTH_CLIENT_ID",
-            default: defaultGithubOAuthClientID
+            default: ""
         )
     }
 }

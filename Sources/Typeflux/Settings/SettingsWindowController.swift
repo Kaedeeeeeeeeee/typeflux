@@ -48,15 +48,12 @@ final class SettingsWindowController: NSObject {
     ) {
         self.settingsStore = settingsStore
 
-        Task { await AuthState.shared.refreshTokenIfNeeded() }
-
         if let window {
             viewModel?.navigate(to: initialSection)
             refreshAppearance()
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            AuthState.shared.refreshProfileIfNeeded()
             return
         }
 
@@ -107,7 +104,6 @@ final class SettingsWindowController: NSObject {
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        AuthState.shared.refreshProfileIfNeeded()
     }
 
     private func refreshAppearance() {

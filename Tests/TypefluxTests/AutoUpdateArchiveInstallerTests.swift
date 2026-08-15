@@ -2,6 +2,14 @@
 import XCTest
 
 final class AutoUpdateArchiveInstallerTests: XCTestCase {
+    func testAutoUpdateAvailabilityMatchesBuildConfiguration() {
+        #if DEBUG
+            XCTAssertFalse(AutoUpdateAvailability.isEnabled)
+        #else
+            XCTAssertTrue(AutoUpdateAvailability.isEnabled)
+        #endif
+    }
+
     func testUpdateQueryItemsIncludeVersionAndArchitecture() {
         let items = AutoUpdateRequestSupport.queryItems(currentVersion: "1.2.0", architecture: "amd64")
 

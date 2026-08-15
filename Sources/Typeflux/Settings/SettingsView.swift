@@ -193,149 +193,6 @@ private extension View {
     }
 }
 
-private enum CloudServerStatusTone {
-    case fast
-    case average
-    case slow
-    case unavailable
-    case untested
-
-    var color: Color {
-        switch self {
-        case .fast:
-            StudioTheme.success
-        case .average:
-            StudioTheme.warning
-        case .slow, .unavailable:
-            StudioTheme.danger
-        case .untested:
-            StudioTheme.textSecondary
-        }
-    }
-}
-
-private struct CloudServerPickerOption: Identifiable {
-    let value: String
-    let domain: String
-    let tagText: String?
-    let tone: CloudServerStatusTone
-
-    var id: String {
-        value
-    }
-}
-
-private struct CloudServerStatusTag: View {
-    let text: String
-    let tone: CloudServerStatusTone
-
-    var body: some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-            .foregroundStyle(tone.color)
-            .padding(.horizontal, StudioTheme.Spacing.small)
-            .padding(.vertical, StudioTheme.Spacing.xxSmall)
-            .background(Capsule().fill(tone.color.opacity(0.12)))
-            .overlay(Capsule().stroke(tone.color.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin))
-    }
-}
-
-private struct CloudServerMenuPicker: View {
-    let options: [CloudServerPickerOption]
-    @Binding var selection: String
-    var width: CGFloat
-    @State private var isPresented = false
-
-    private var selectedOption: CloudServerPickerOption? {
-        options.first(where: { $0.value == selection }) ?? options.first
-    }
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            HStack(spacing: StudioTheme.Spacing.small) {
-                if let selectedOption {
-                    Text(selectedOption.domain)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    if let tagText = selectedOption.tagText {
-                        CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
-                    }
-                }
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, StudioTheme.Insets.buttonVertical)
-            .frame(width: width)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(options) { option in
-                    Button {
-                        selection = option.value
-                        isPresented = false
-                    } label: {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Group {
-                                if option.value == selection {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(
-                                            size: StudioTheme.Typography.iconXSmall,
-                                            weight: .semibold
-                                        ))
-                                        .foregroundStyle(StudioTheme.accent)
-                                } else {
-                                    Color.clear
-                                }
-                            }
-                            .frame(width: StudioTheme.Typography.iconSmall)
-                            Text(option.domain)
-                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                                .lineLimit(1)
-                            Spacer(minLength: StudioTheme.Spacing.large)
-                            if let tagText = option.tagText {
-                                CloudServerStatusTag(text: tagText, tone: option.tone)
-                            }
-                        }
-                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                        .padding(.vertical, StudioTheme.Spacing.small)
-                        .frame(width: max(width, 340), alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                                .fill(
-                                    option.value == selection
-                                        ? StudioTheme.accent.opacity(0.08)
-                                        : Color.clear
-                                )
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(StudioTheme.Spacing.small)
-            .background(StudioTheme.surface)
-        }
-        .fixedSize()
-    }
-}
-
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     private struct ShortcutConfiguration {
@@ -435,7 +292,6 @@ struct StudioView: View {
     @State private var agentConfigurationTab: AgentConfigurationTab = .general
     @State private var isAdvancedSettingsExpanded = false
     @ObservedObject private var localization = AppLocalization.shared
-    @ObservedObject private var authState = AuthState.shared
 
     var body: some View {
         StudioShell(
@@ -445,11 +301,9 @@ struct StudioView: View {
             onSendDirectFeedback: openDirectFeedback,
             onSendFeedbackEmail: sendFeedbackEmail,
             onOpenGitHubIssue: openGitHubIssue,
-            onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
-            agentEnabled: viewModel.agentFrameworkEnabled,
-            isLoggedIn: authState.isLoggedIn
+            agentEnabled: viewModel.agentFrameworkEnabled
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
@@ -486,7 +340,6 @@ struct StudioView: View {
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
         ) { _ in
             viewModel.schedulePermissionRefresh()
-            authState.refreshSubscriptionIfNeeded()
         }
         .overlay(alignment: .bottom) {
             if let toast = viewModel.toastMessage {
@@ -628,7 +481,7 @@ struct StudioView: View {
     private func openDirectFeedback() {
         cancelAllFeedbackImageUploads()
         feedbackContent = ""
-        feedbackContact = authState.userProfile?.email ?? ""
+        feedbackContact = ""
         feedbackImages = []
         feedbackImageUploadTasks = [:]
         feedbackSubmissionError = nil
@@ -660,7 +513,6 @@ struct StudioView: View {
         let content = feedbackContent
         let contact = feedbackContact
         let imageURLs = feedbackImages.compactMap(\.state.uploadedURL)
-        let token = authState.accessToken
         isSubmittingFeedback = true
         feedbackSubmissionError = nil
 
@@ -669,8 +521,7 @@ struct StudioView: View {
                 _ = try await FeedbackAPIService.submit(
                     content: content,
                     contact: contact,
-                    imageURLs: imageURLs,
-                    token: token
+                    imageURLs: imageURLs
                 )
                 isSubmittingFeedback = false
                 isDirectFeedbackPresented = false
@@ -717,7 +568,6 @@ struct StudioView: View {
             )
         )
 
-        let token = authState.accessToken
         let task = Task.detached(priority: .utility) {
             do {
                 try Task.checkCancellation()
@@ -733,8 +583,7 @@ struct StudioView: View {
                 let target = try await FeedbackAPIService.createImageUploadTarget(
                     filename: prepared.filename,
                     contentType: prepared.contentType,
-                    sizeBytes: Int64(prepared.data.count),
-                    token: token
+                    sizeBytes: Int64(prepared.data.count)
                 )
                 try Task.checkCancellation()
                 try await FeedbackAPIService.uploadImage(
@@ -785,22 +634,6 @@ struct StudioView: View {
     private func cancelAllFeedbackImageUploads() {
         feedbackImageUploadTasks.values.forEach { $0.cancel() }
         feedbackImageUploadTasks = [:]
-    }
-
-    private func handleAccountAction() {
-        guard authState.isLoggedIn else {
-            LoginWindowController.shared.show()
-            return
-        }
-
-        Task { @MainActor in
-            switch await authState.refreshProfile() {
-            case .authenticated, .failed:
-                viewModel.navigate(to: .account)
-            case .unauthenticated:
-                LoginWindowController.shared.show()
-            }
-        }
     }
 
     private var pageHeader: some View {
@@ -900,32 +733,8 @@ struct StudioView: View {
                         viewModel.beginCreatingPersona()
                     }
                 }
-            } else if viewModel.currentSection == .account {
-                Spacer()
-
-                accountMoreMenuButton
             }
         }
-    }
-
-    private var accountMoreMenuButton: some View {
-        Menu {
-            Button(role: .destructive) {
-                authState.logout()
-                viewModel.navigate(to: .home)
-            } label: {
-                Label(L("auth.account.logout"), systemImage: "rectangle.portrait.and.arrow.forward")
-            }
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                .frame(width: 32, height: 32)
-                .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .accessibilityLabel(L("history.action.more"))
-        .disabled(!authState.isLoggedIn)
     }
 
     @ViewBuilder
@@ -945,10 +754,6 @@ struct StudioView: View {
             settingsPage
         case .agent:
             agentPage
-        case .account:
-            AccountView(authState: AuthState.shared) {
-                viewModel.navigate(to: .home)
-            }
         }
     }
 
@@ -1983,7 +1788,6 @@ struct StudioView: View {
         var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
             .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
             .filter { $0 != .custom }
-            .filter { $0 != .typefluxCloud }
             .map { provider in
                 (label: provider.displayName, value: provider.studioProviderID)
             }
@@ -1998,8 +1802,7 @@ struct StudioView: View {
             lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
         }
 
-        return [(label: LLMRemoteProvider.typefluxCloud.displayName, value: .typefluxCloud)] + remoteOptions +
-            customOptions
+        return remoteOptions + customOptions
     }
 
     private func personaRosterCard(
@@ -2670,21 +2473,23 @@ struct StudioView: View {
                         .toggleStyle(.switch)
                     }
 
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    if AutoUpdateAvailability.isEnabled {
+                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoUpdate.title"),
-                        subtitle: L("settings.advanced.autoUpdate.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.autoUpdateEnabled },
-                                set: viewModel.setAutoUpdateEnabled
+                        StudioSettingRow(
+                            title: L("settings.advanced.autoUpdate.title"),
+                            subtitle: L("settings.advanced.autoUpdate.subtitle")
+                        ) {
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { viewModel.autoUpdateEnabled },
+                                    set: viewModel.setAutoUpdateEnabled
+                                )
                             )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                        }
                     }
                 }
             }
@@ -2829,146 +2634,10 @@ struct StudioView: View {
                             }
                         }
                     }
-
-                    StudioSectionTitle(title: L("settings.servers.title"))
-                    cloudServerSettingsCard
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-    }
-
-    private var cloudServerSettingsCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                StudioSettingRow(
-                    title: L("settings.servers.api.title"),
-                    subtitle: L("settings.servers.api.subtitle")
-                ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableAPIServers,
-                            statuses: viewModel.apiServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredAPIServer },
-                            set: viewModel.setPreferredAPIServer
-                        ),
-                        width: 310
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.servers.asr.title"),
-                    subtitle: L("settings.servers.asr.subtitle")
-                ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableASRServers,
-                            statuses: viewModel.asrServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredASRServer },
-                            set: viewModel.setPreferredASRServer
-                        ),
-                        width: 310
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.servers.speedTest.title"),
-                    subtitle: viewModel.cloudServerTestSummary
-                        ?? L("settings.servers.speedTest.subtitle")
-                ) {
-                    StudioButton(
-                        title: viewModel.isTestingCloudServers
-                            ? L("settings.servers.speedTest.testing")
-                            : L("settings.servers.speedTest.action"),
-                        systemImage: "gauge.with.dots.needle.67percent",
-                        variant: .secondary,
-                        isDisabled: viewModel.isTestingCloudServers,
-                        isLoading: viewModel.isTestingCloudServers
-                    ) {
-                        viewModel.testCloudServerLatency()
-                    }
-                }
-            }
-        }
-    }
-
-    private func cloudServerOptions(
-        servers: [String],
-        statuses: [CloudEndpointStatus]
-    ) -> [CloudServerPickerOption] {
-        [
-            CloudServerPickerOption(
-                value: CloudServerPreferences.automaticValue,
-                domain: L("settings.servers.automatic"),
-                tagText: nil,
-                tone: .untested
-            )
-        ] + servers.map { server in
-            cloudServerOption(server, statuses: statuses)
-        }
-    }
-
-    private func cloudServerOption(
-        _ server: String,
-        statuses: [CloudEndpointStatus]
-    ) -> CloudServerPickerOption {
-        let domain = URL(string: server)?.host ?? server
-        guard let status = statuses.first(where: { $0.baseURL.absoluteString == server }) else {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.notTested"),
-                tone: .untested
-            )
-        }
-        if status.lastError != nil {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.unavailable"),
-                tone: .unavailable
-            )
-        }
-        guard let latencyMs = status.latencyMs else {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.notTested"),
-                tone: .untested
-            )
-        }
-
-        let roundedLatency = Int(latencyMs.rounded())
-        if latencyMs < 150 {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.fast", roundedLatency),
-                tone: .fast
-            )
-        }
-        if latencyMs < 350 {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.average", roundedLatency),
-                tone: .average
-            )
-        }
-        return CloudServerPickerOption(
-            value: server,
-            domain: domain,
-            tagText: L("settings.servers.tag.slow", roundedLatency),
-            tone: .slow
-        )
     }
 
     // MARK: - Agent Page
@@ -4685,12 +4354,8 @@ struct StudioView: View {
                         forEndpoint: viewModel.whisperBaseURL
                     ) : viewModel.whisperModel
             )
-        case StudioModelProviderID.typefluxOfficial.rawValue:
-            viewModel.setSTTProvider(.typefluxOfficial)
         case StudioModelProviderID.googleCloud.rawValue:
             viewModel.setSTTProvider(.googleCloud)
-        case StudioModelProviderID.typefluxCloud.rawValue:
-            viewModel.setLLMRemoteProvider(.typefluxCloud)
         case "ollama-local":
             viewModel.setLLMModelSelection(
                 .ollama,
@@ -4728,8 +4393,8 @@ struct StudioView: View {
                 .groqSTT
             case .soniox:
                 .soniox
-            case .typefluxOfficial:
-                .typefluxOfficial
+            case .deepgram:
+                .deepgram
             }
         case .llm:
             viewModel.llmProvider == .ollama
@@ -4747,18 +4412,7 @@ struct StudioView: View {
     }
 
     private var sttModelProviderCards: [StudioModelCard] {
-        var cards = [
-            StudioModelCard(
-                id: StudioModelProviderID.typefluxOfficial.rawValue,
-                name: STTProvider.typefluxOfficial.displayName,
-                summary: L("settings.models.card.typefluxOfficial.summary"),
-                badge: L("settings.models.badge.official"),
-                metadata: L("settings.models.builtInDefaultModel"),
-                isSelected: viewModel.sttProvider == .typefluxOfficial,
-                isMuted: false,
-                actionTitle: L("settings.models.useTypefluxOfficial")
-            )
-        ]
+        var cards: [StudioModelCard] = []
 
         if !FreeSTTModelRegistry.suggestedModelNames.isEmpty {
             cards.append(
@@ -4861,6 +4515,17 @@ struct StudioView: View {
                     isSelected: viewModel.sttProvider == .soniox,
                     isMuted: false,
                     actionTitle: L("settings.models.useSoniox")
+                ),
+                StudioModelCard(
+                    id: StudioModelProviderID.deepgram.rawValue,
+                    name: STTProvider.deepgram.displayName,
+                    summary: L("settings.models.card.deepgram.summary"),
+                    badge: L("settings.models.badge.api"),
+                    metadata: viewModel.deepgramModel.isEmpty
+                        ? L("settings.models.modelNotConfigured") : viewModel.deepgramModel,
+                    isSelected: viewModel.sttProvider == .deepgram,
+                    isMuted: false,
+                    actionTitle: L("settings.models.useDeepgram")
                 )
             ]
         )
@@ -4869,22 +4534,10 @@ struct StudioView: View {
     }
 
     private var llmModelProviderCards: [StudioModelCard] {
-        var cards = [
-            StudioModelCard(
-                id: LLMRemoteProvider.typefluxCloud.studioProviderID.rawValue,
-                name: LLMRemoteProvider.typefluxCloud.displayName,
-                summary: L("settings.models.card.typefluxCloud.summary"),
-                badge: L("settings.models.badge.official"),
-                metadata: L("settings.models.builtInDefaultModel"),
-                isSelected: viewModel.llmProvider == .openAICompatible
-                    && viewModel.llmRemoteProvider == .typefluxCloud,
-                isMuted: false,
-                actionTitle: L("settings.models.useTypefluxCloud")
-            )
-        ]
+        var cards: [StudioModelCard] = []
 
         var standardCards = LLMRemoteProvider.settingsDisplayOrder
-            .filter { $0 != .typefluxCloud && $0 != .custom }
+            .filter { $0 != .custom }
             .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
             .map { provider in
                 (
@@ -5048,7 +4701,7 @@ struct StudioView: View {
 
                 if [
                     StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
+                    .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
                         Spacer()
@@ -5067,9 +4720,8 @@ struct StudioView: View {
                             }
                         } else if [
                             StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
-                        ].contains(viewModel.focusedModelProvider),
-                            !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
+                            .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram
+                        ].contains(viewModel.focusedModelProvider) {
                             StudioButton(
                                 title: viewModel.sttConnectionTestState == .testing
                                     ? L("settings.models.testingConnection") : L("common.test"),
@@ -5096,9 +4748,8 @@ struct StudioView: View {
                         connectionTestResultView(viewModel.llmConnectionTestState)
                     } else if [
                         StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
-                    ].contains(viewModel.focusedModelProvider),
-                        !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
+                        .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram
+                    ].contains(viewModel.focusedModelProvider) {
                         connectionTestResultView(viewModel.sttConnectionTestState)
                     }
                 }
@@ -5203,9 +4854,6 @@ struct StudioView: View {
     private var focusedProviderForm: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             switch viewModel.focusedModelProvider {
-            case .typefluxOfficial:
-                typefluxOfficialProviderForm
-
             case .appleSpeech:
                 Text(L("settings.models.appleSpeech.quickest"))
                     .font(.studioBody(StudioTheme.Typography.caption))
@@ -5376,9 +5024,6 @@ struct StudioView: View {
             case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
                  .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
                 llmRemoteProviderForm
-
-            case .typefluxCloud:
-                typefluxCloudLLMProviderForm
 
             case .multimodalLLM:
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
@@ -5557,6 +5202,48 @@ struct StudioView: View {
                         suggestions: SonioxASRDefaults.suggestedModels
                     )
                 }
+
+            case .deepgram:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    StudioTextInputCard(
+                        label: L("common.apiKey"), placeholder: "Deepgram API key",
+                        text: Binding(
+                            get: { viewModel.deepgramAPIKey },
+                            set: viewModel.setDeepgramAPIKey
+                        ),
+                        secure: true
+                    ) {
+                        if let url = sttProviderAPIKeyURL(.deepgram) {
+                            apiKeyHelpButton(url: url)
+                        }
+                    }
+                    StudioSuggestedTextInputCard(
+                        label: L("common.model"),
+                        placeholder: DeepgramASRDefaults.model,
+                        text: Binding(
+                            get: { viewModel.deepgramModel },
+                            set: viewModel.setDeepgramModel
+                        ),
+                        suggestions: DeepgramASRDefaults.suggestedModels
+                    )
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        Text(L("settings.models.deepgram.language"))
+                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        StudioMenuPicker(
+                            options: DeepgramLanguage.allCases.map { ($0.displayName, $0) },
+                            selection: Binding(
+                                get: { viewModel.deepgramLanguage },
+                                set: viewModel.setDeepgramLanguage
+                            ),
+                            width: 320
+                        )
+                        Text(L("settings.models.deepgram.languageHint"))
+                            .font(.studioBody(StudioTheme.Typography.caption))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
     }
@@ -5567,39 +5254,7 @@ struct StudioView: View {
             return false
         }
 
-        return !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn
-    }
-
-    private var typefluxOfficialProviderForm: some View {
-        typefluxLoginRequiredForm(message: L("settings.models.typefluxOfficial.loginRequired"))
-    }
-
-    private var typefluxCloudLLMProviderForm: some View {
-        typefluxLoginRequiredForm(message: L("settings.models.typefluxCloud.loginRequired"))
-    }
-
-    private func typefluxLoginRequiredForm(message: String) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            if !authState.isLoggedIn {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    Text(message)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.warning)
-
-                    HStack {
-                        Spacer()
-
-                        StudioButton(
-                            title: L("settings.models.typefluxOfficial.signIn"),
-                            systemImage: "person.circle",
-                            variant: .primary
-                        ) {
-                            LoginWindowController.shared.show()
-                        }
-                    }
-                }
-            }
-        }
+        return true
     }
 
     @ViewBuilder
@@ -6093,10 +5748,8 @@ struct StudioView: View {
             !viewModel.groqSTTAPIKey.isEmpty
         case .soniox:
             !viewModel.sonioxAPIKey.isEmpty
-        case .typefluxOfficial:
-            authState.isLoggedIn
-        case .typefluxCloud:
-            authState.isLoggedIn
+        case .deepgram:
+            !viewModel.deepgramAPIKey.isEmpty
         }
     }
 
@@ -6153,10 +5806,8 @@ struct StudioView: View {
             viewModel.setSTTProvider(.groq)
         case .soniox:
             viewModel.setSTTProvider(.soniox)
-        case .typefluxOfficial:
-            viewModel.setSTTProvider(.typefluxOfficial)
-        case .typefluxCloud:
-            viewModel.setLLMRemoteProvider(.typefluxCloud)
+        case .deepgram:
+            viewModel.setSTTProvider(.deepgram)
         }
     }
 
@@ -6216,10 +5867,8 @@ struct StudioView: View {
             "cloud"
         case .soniox:
             "waveform.and.mic"
-        case .typefluxOfficial:
-            "infinity"
-        case .typefluxCloud:
-            "infinity"
+        case .deepgram:
+            "waveform.badge.magnifyingglass"
         }
     }
 
@@ -6254,8 +5903,6 @@ struct StudioView: View {
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
-        case .typefluxCloud:
-            L("settings.models.overview.typefluxCloud")
         case .multimodalLLM:
             L("settings.models.overview.multimodal")
         case .aliCloud:
@@ -6268,8 +5915,8 @@ struct StudioView: View {
             L("settings.models.overview.groq")
         case .soniox:
             L("settings.models.overview.soniox")
-        case .typefluxOfficial:
-            L("settings.models.overview.typefluxOfficial")
+        case .deepgram:
+            L("settings.models.overview.deepgram")
         }
     }
 
@@ -6288,8 +5935,6 @@ struct StudioView: View {
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             activeLLMRemoteProvider.displayName
-        case .typefluxCloud:
-            LLMRemoteProvider.typefluxCloud.displayName
         case .multimodalLLM:
             STTProvider.multimodalLLM.displayName
         case .aliCloud:
@@ -6302,8 +5947,8 @@ struct StudioView: View {
             STTProvider.groq.displayName
         case .soniox:
             STTProvider.soniox.displayName
-        case .typefluxOfficial:
-            STTProvider.typefluxOfficial.displayName
+        case .deepgram:
+            STTProvider.deepgram.displayName
         }
     }
 
@@ -6313,8 +5958,7 @@ struct StudioView: View {
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
-             .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram:
             L("settings.models.mode.remote")
         }
     }
@@ -6325,8 +5969,7 @@ struct StudioView: View {
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
-             .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram:
             StudioTheme.accent
         }
     }
@@ -6337,8 +5980,7 @@ struct StudioView: View {
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
-             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
-             .typefluxCloud:
+             .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram:
             StudioTheme.accentSoft
         }
     }
@@ -6372,7 +6014,9 @@ struct StudioView: View {
             URL(string: "https://platform.openai.com/api-keys")
         case .soniox:
             URL(string: "https://console.soniox.com/")
-        case .doubaoRealtime, .googleCloud, .freeModel, .localModel, .appleSpeech, .typefluxOfficial:
+        case .deepgram:
+            URL(string: "https://console.deepgram.com/")
+        case .doubaoRealtime, .googleCloud, .freeModel, .localModel, .appleSpeech:
             nil
         }
     }
@@ -6408,8 +6052,6 @@ struct StudioView: View {
         case .openCodeGo:
             URL(string: "https://opencode.ai/auth")
         case .freeModel, .custom:
-            nil
-        case .typefluxCloud:
             nil
         }
     }
@@ -6458,10 +6100,8 @@ struct StudioView: View {
                 ? OpenAIAudioModelCatalog.groqWhisperModels[0] : viewModel.groqSTTModel
         case .soniox:
             viewModel.sonioxModel.isEmpty ? SonioxASRDefaults.model : viewModel.sonioxModel
-        case .typefluxOfficial:
-            STTProvider.typefluxOfficial.displayName
-        case .typefluxCloud:
-            LLMRemoteProvider.typefluxCloud.displayName
+        case .deepgram:
+            viewModel.deepgramModel.isEmpty ? DeepgramASRDefaults.model : viewModel.deepgramModel
         }
     }
 
@@ -6497,10 +6137,8 @@ struct StudioView: View {
             STTProvider.groq.displayName
         case .soniox:
             STTProvider.soniox.displayName
-        case .typefluxOfficial:
-            STTProvider.typefluxOfficial.displayName
-        case .typefluxCloud:
-            LLMRemoteProvider.typefluxCloud.displayName
+        case .deepgram:
+            STTProvider.deepgram.displayName
         }
     }
 
@@ -6534,10 +6172,8 @@ struct StudioView: View {
             L("settings.models.focused.groq")
         case .soniox:
             L("settings.models.focused.soniox")
-        case .typefluxOfficial:
-            L("settings.models.focused.typefluxOfficial")
-        case .typefluxCloud:
-            L("settings.models.focused.typefluxCloud")
+        case .deepgram:
+            L("settings.models.focused.deepgram")
         }
     }
 
@@ -6574,10 +6210,8 @@ struct StudioView: View {
             L("settings.models.routing.groq")
         case .soniox:
             L("settings.models.routing.soniox")
-        case .typefluxOfficial:
-            L("settings.models.routing.typefluxOfficial")
-        case .typefluxCloud:
-            L("settings.models.routing.typefluxCloud")
+        case .deepgram:
+            L("settings.models.routing.deepgram")
         }
     }
 

@@ -1,6 +1,12 @@
 import Foundation
 
 enum WorkflowOverlayPresentationPolicy {
+    static func shouldShowRecordingTranscriptionPreview() -> Bool {
+        // Keep realtime transcription running for final-result latency and fallback
+        // recovery, but leave the recording capsule compact until text is applied.
+        false
+    }
+
     static func shouldShowProcessingAfterRecording() -> Bool {
         // Once audio capture ends, the overlay should always leave the recording state.
         // Some windows can only return a final dialog instead of allowing write-back, but

@@ -85,6 +85,7 @@ final class SettingsStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        LegacyCloudAccountCleanup.runIfNeeded(defaults: defaults)
     }
 
     var appLanguage: AppLanguage {
@@ -362,6 +363,45 @@ final class SettingsStore {
                 defaults.set(trimmed, forKey: "stt.soniox.model")
             }
         }
+    }
+
+    var deepgramAPIKey: String {
+        get { defaults.string(forKey: "stt.deepgram.apiKey") ?? "" }
+        set { defaults.set(newValue, forKey: "stt.deepgram.apiKey") }
+    }
+
+    var deepgramModel: String {
+        get {
+            let stored = defaults.string(forKey: "stt.deepgram.model")?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return stored.isEmpty ? DeepgramASRDefaults.model : stored
+        }
+        set {
+            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                defaults.removeObject(forKey: "stt.deepgram.model")
+            } else {
+                defaults.set(trimmed, forKey: "stt.deepgram.model")
+            }
+        }
+    }
+
+    var deepgramLanguage: DeepgramLanguage {
+        get {
+            guard
+                let raw = defaults.string(forKey: "stt.deepgram.language"),
+                let language = DeepgramLanguage(rawValue: raw)
+            else {
+                return DeepgramLanguage.defaultLanguage(for: appLanguage)
+            }
+            return language
+        }
+        set { defaults.set(newValue.rawValue, forKey: "stt.deepgram.language") }
+    }
+
+    var hasConfiguredDeepgramLanguage: Bool {
+        guard let raw = defaults.string(forKey: "stt.deepgram.language") else { return false }
+        return DeepgramLanguage(rawValue: raw) != nil
     }
 
     var multimodalLLMModel: String {
@@ -659,8 +699,6 @@ final class SettingsStore {
 
     /// Whether the current LLM selection has everything it needs to dispatch a request.
     /// Used to drive first-run smart defaults such as auto-selecting the built-in persona.
-    /// `typefluxCloud` is treated as configured whenever selected (auth is carried by JWT,
-    /// not by base URL / API key here); transient auth failures surface at request time.
     var isLLMConfigured: Bool {
         switch llmProvider {
         case .ollama:
@@ -669,8 +707,6 @@ final class SettingsStore {
             return !baseURL.isEmpty && !model.isEmpty
         case .openAICompatible:
             switch llmRemoteProvider {
-            case .typefluxCloud:
-                return true
             case .freeModel:
                 return !llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .custom:
@@ -713,22 +749,6 @@ final class SettingsStore {
     var localOptimizationEnabled: Bool {
         get { defaults.object(forKey: "stt.localOptimization.enabled") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "stt.localOptimization.enabled") }
-    }
-
-    var lastTypefluxCloudLoginReminderAt: Date? {
-        get {
-            guard defaults.object(forKey: "typefluxCloud.loginReminder.lastShownAt") != nil else {
-                return nil
-            }
-            return Date(timeIntervalSince1970: defaults.double(forKey: "typefluxCloud.loginReminder.lastShownAt"))
-        }
-        set {
-            if let newValue {
-                defaults.set(newValue.timeIntervalSince1970, forKey: "typefluxCloud.loginReminder.lastShownAt")
-            } else {
-                defaults.removeObject(forKey: "typefluxCloud.loginReminder.lastShownAt")
-            }
-        }
     }
 
     var localSTTMemoryOptimizationEnabled: Bool {
@@ -1121,7 +1141,6 @@ final class SettingsStore {
         }
 
         let providerRequiresAPIKey = llmRemoteProvider != .custom && llmRemoteProvider != .freeModel
-            && llmRemoteProvider != .typefluxCloud
         return providerRequiresAPIKey
             && llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !multimodalLLMAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

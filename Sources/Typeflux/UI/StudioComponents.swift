@@ -558,11 +558,9 @@ struct StudioShell<Content: View>: View {
     let onSendDirectFeedback: () -> Void
     let onSendFeedbackEmail: () -> Void
     let onOpenGitHubIssue: () -> Void
-    let onAccountAction: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
     let agentEnabled: Bool
-    let isLoggedIn: Bool
     let content: (CGSize) -> Content
 
     init(
@@ -572,11 +570,9 @@ struct StudioShell<Content: View>: View {
         onSendDirectFeedback: @escaping () -> Void,
         onSendFeedbackEmail: @escaping () -> Void,
         onOpenGitHubIssue: @escaping () -> Void,
-        onAccountAction: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
         agentEnabled: Bool = false,
-        isLoggedIn: Bool = false,
         @ViewBuilder content: @escaping (CGSize) -> Content
     ) {
         self.currentSection = currentSection
@@ -585,11 +581,9 @@ struct StudioShell<Content: View>: View {
         self.onSendDirectFeedback = onSendDirectFeedback
         self.onSendFeedbackEmail = onSendFeedbackEmail
         self.onOpenGitHubIssue = onOpenGitHubIssue
-        self.onAccountAction = onAccountAction
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
         self.agentEnabled = agentEnabled
-        self.isLoggedIn = isLoggedIn
         self.content = content
     }
 
@@ -606,9 +600,7 @@ struct StudioShell<Content: View>: View {
                     onSendFeedbackEmail: onSendFeedbackEmail,
                     onOpenGitHubIssue: onOpenGitHubIssue,
                     onOpenAbout: onOpenAbout,
-                    onAccountAction: onAccountAction,
-                    agentEnabled: agentEnabled,
-                    isLoggedIn: isLoggedIn
+                    agentEnabled: agentEnabled
                 )
                 .frame(width: StudioTheme.sidebarWidth)
                 .background(
@@ -743,9 +735,7 @@ struct StudioSidebar: View {
     let onSendFeedbackEmail: () -> Void
     let onOpenGitHubIssue: () -> Void
     let onOpenAbout: () -> Void
-    let onAccountAction: () -> Void
     let agentEnabled: Bool
-    let isLoggedIn: Bool
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -802,13 +792,6 @@ struct StudioSidebar: View {
                     .padding(.vertical, StudioTheme.Spacing.xxSmall)
 
                 HStack(spacing: StudioTheme.Spacing.none) {
-                    utilityButton(
-                        systemImage: isLoggedIn ? "person.circle.fill" : "person.circle",
-                        accessibilityLabel: L("sidebar.accountAccessibility"),
-                        isActive: currentSection == .account,
-                        action: onAccountAction
-                    )
-
                     Spacer()
 
                     HStack(spacing: StudioTheme.Spacing.smallMedium) {

@@ -25,70 +25,17 @@ final class OnboardingViewModelTests: XCTestCase {
     func testVisibleStepsDoNotIncludeWelcomeStep() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .stt, .llm, .permissions, .shortcuts])
+        XCTAssertEqual(viewModel.visibleSteps, [.language, .stt, .llm, .permissions, .shortcuts])
         XCTAssertEqual(viewModel.currentStep, .language)
     }
 
     @MainActor
-    func testAdvanceFromLanguageMovesToAccountStep() {
+    func testAdvanceFromLanguageMovesToSTTStep() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
         viewModel.advance()
 
-        XCTAssertEqual(viewModel.currentStep, .account)
-    }
-
-    @MainActor
-    func testAdvanceFromAccountWithoutLoginMovesToSTT() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.advance()
-
         XCTAssertEqual(viewModel.currentStep, .stt)
-    }
-
-    @MainActor
-    func testContinueWithoutCloudAccountMovesToManualSetup() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.continueWithoutCloudAccount()
-
-        XCTAssertFalse(viewModel.useCloudAccountModels)
-        XCTAssertEqual(viewModel.currentStep, .stt)
-    }
-
-    @MainActor
-    func testUsingCloudAccountSkipsModelConfigurationSteps() {
-        let authState = makeLoggedInAuthState()
-        let viewModel = OnboardingViewModel(settingsStore: store, authState: authState, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.useCloudAccountModelsAndContinue()
-
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .permissions, .shortcuts])
-        XCTAssertEqual(store.sttProvider, .typefluxOfficial)
-        XCTAssertEqual(store.llmProvider, .openAICompatible)
-        XCTAssertEqual(store.llmRemoteProvider, .typefluxCloud)
-    }
-
-    @MainActor
-    func testCloudDefaultsNotificationSyncsOnboardingState() async throws {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-        store.sttProvider = .typefluxOfficial
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: store)
-        try await Task.sleep(nanoseconds: 50_000_000)
-
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .permissions, .shortcuts])
-        XCTAssertEqual(viewModel.sttProvider, .typefluxOfficial)
-        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
-        XCTAssertEqual(viewModel.llmRemoteProvider, .typefluxCloud)
     }
 
     @MainActor
@@ -130,6 +77,27 @@ final class OnboardingViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.currentStep, .llm)
         XCTAssertFalse(viewModel.showIncompleteSTTConfigurationAlert)
+    }
+
+    @MainActor
+    func testDeepgramConfigurationRequiresAPIKeyAndPersistsDefaults() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        viewModel.currentStep = .stt
+        viewModel.selectSTTProvider(.deepgram)
+        viewModel.deepgramAPIKey = ""
+
+        XCTAssertFalse(viewModel.isSTTConfigurationComplete)
+
+        viewModel.deepgramAPIKey = "dg-test"
+        viewModel.deepgramModel = ""
+        viewModel.deepgramLanguage = .japanese
+        viewModel.advance()
+
+        XCTAssertEqual(viewModel.currentStep, .llm)
+        XCTAssertEqual(store.sttProvider, .deepgram)
+        XCTAssertEqual(store.deepgramAPIKey, "dg-test")
+        XCTAssertEqual(store.deepgramModel, DeepgramASRDefaults.model)
+        XCTAssertEqual(store.deepgramLanguage, .japanese)
     }
 
     @MainActor
@@ -258,26 +226,6 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testInitialSTTProviderFallsBackWhenTypefluxCloudIsHiddenInOnboarding() {
-        store.sttProvider = .typefluxOfficial
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.sttProvider, .localModel)
-    }
-
-    @MainActor
-    func testInitialLLMProviderFallsBackWhenTypefluxCloudIsHiddenInOnboarding() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
-        XCTAssertEqual(viewModel.llmRemoteProvider, .custom)
-    }
-
-    @MainActor
     func testNewUserDefaultsToSenseVoiceAndOpenAI() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
@@ -288,20 +236,6 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     // MARK: - Default persona selection on completion
-
-    @MainActor
-    func testCompletingOnboardingWithCloudLoginSelectsTypefluxPersona() {
-        let authState = makeLoggedInAuthState()
-        let viewModel = OnboardingViewModel(settingsStore: store, authState: authState, onComplete: {})
-
-        viewModel.currentStep = .account
-        viewModel.useCloudAccountModelsAndContinue()
-        completeOnboarding(viewModel)
-
-        XCTAssertTrue(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-        XCTAssertEqual(store.activePersona?.name, "Typeflux")
-    }
 
     @MainActor
     func testCompletingOnboardingWithCustomLLMSelectsTypefluxPersona() {
@@ -384,31 +318,6 @@ final class OnboardingViewModelTests: XCTestCase {
             guardCounter += 1
         }
         XCTAssertTrue(store.isOnboardingCompleted, "Onboarding failed to complete within bounded iterations")
-    }
-
-    @MainActor
-    private func makeLoggedInAuthState() -> AuthState {
-        let storedToken = (
-            token: "token",
-            expiresAt: Int(Date().timeIntervalSince1970) + 3600
-        )
-        let storedProfile = UserProfile(
-            id: "user_123",
-            email: "test@example.com",
-            name: "Test User",
-            status: 1,
-            provider: "email",
-            createdAt: "2026-01-01T00:00:00Z",
-            updatedAt: "2026-01-01T00:00:00Z"
-        )
-        return AuthState(
-            loadStoredToken: { storedToken },
-            loadStoredUserProfile: { storedProfile },
-            saveStoredToken: { _, _ in },
-            saveStoredUserProfile: { _ in },
-            clearStoredSession: {},
-            fetchProfile: { _ in storedProfile }
-        )
     }
 
     @MainActor

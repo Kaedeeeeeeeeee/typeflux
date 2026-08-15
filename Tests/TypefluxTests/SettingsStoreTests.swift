@@ -306,6 +306,30 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.freeSTTModel, "custom-free-model")
     }
 
+    func testDeepgramConfigurationDefaultsAndPersists() {
+        store.appLanguage = .simplifiedChinese
+        XCTAssertEqual(store.deepgramAPIKey, "")
+        XCTAssertEqual(store.deepgramModel, DeepgramASRDefaults.model)
+        XCTAssertEqual(store.deepgramLanguage, .simplifiedChinese)
+        XCTAssertFalse(store.hasConfiguredDeepgramLanguage)
+
+        store.deepgramAPIKey = "dg-test"
+        store.deepgramModel = "nova-3-general"
+        store.deepgramLanguage = .traditionalChinese
+
+        XCTAssertEqual(store.deepgramAPIKey, "dg-test")
+        XCTAssertEqual(store.deepgramModel, "nova-3-general")
+        XCTAssertEqual(store.deepgramLanguage, .traditionalChinese)
+        XCTAssertTrue(store.hasConfiguredDeepgramLanguage)
+
+        store.deepgramModel = "   "
+        XCTAssertEqual(store.deepgramModel, DeepgramASRDefaults.model)
+
+        defaults.set("unsupported", forKey: "stt.deepgram.language")
+        XCTAssertEqual(store.deepgramLanguage, .simplifiedChinese)
+        XCTAssertFalse(store.hasConfiguredDeepgramLanguage)
+    }
+
     // MARK: - Local STT Model
 
     func testDefaultLocalSTTModel() {

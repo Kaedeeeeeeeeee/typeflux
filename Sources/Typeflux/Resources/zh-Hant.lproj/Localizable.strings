@@ -78,25 +78,6 @@
 "studio.search.settings" = "搜尋設定...";
 
 "settings.general" = "一般";
-"settings.servers.title" = "伺服器";
-"settings.servers.api.title" = "API 伺服器";
-"settings.servers.api.subtitle" = "用於帳號、雲端 AI 和應用程式要求的伺服器。";
-"settings.servers.asr.title" = "語音辨識伺服器";
-"settings.servers.asr.subtitle" = "用於 Typeflux 語音辨識的伺服器。";
-"settings.servers.automatic" = "自動（選擇最快可用位址）";
-"settings.servers.speedTest.title" = "伺服器測速";
-"settings.servers.speedTest.subtitle" = "測試全部可用位址，並在上方選單中顯示延遲。";
-"settings.servers.speedTest.action" = "開始測速";
-"settings.servers.speedTest.testing" = "測速中";
-"settings.servers.speedTest.summary" = "測速完成：API %d/%d 可用，語音辨識 %d/%d 可用。";
-"settings.servers.option.notTested" = "%@ · 未測速";
-"settings.servers.option.unavailable" = "%@ · 無法使用";
-"settings.servers.option.latency" = "%@ · %d 毫秒";
-"settings.servers.tag.fast" = "快速 · %d 毫秒";
-"settings.servers.tag.average" = "一般 · %d 毫秒";
-"settings.servers.tag.slow" = "較慢 · %d 毫秒";
-"settings.servers.tag.unavailable" = "無法使用";
-"settings.servers.tag.notTested" = "未測速";
 "settings.launchAtLogin.title" = "開機自動啟動";
 "settings.launchAtLogin.subtitle" = "登入 Mac 後自動啟動 Typeflux，無需手動打開。";
 "settings.activationHotkey" = "語音快捷鍵";
@@ -271,13 +252,12 @@
 "provider.stt.googleCloud" = "Google 語音轉文字";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
-"provider.stt.typefluxOfficial" = "Typeflux Cloud";
+"provider.stt.deepgram" = "Deepgram";
 "provider.llm.openAICompatible" = "OpenAI 相容";
 "provider.llm.custom" = "自訂";
 "provider.llm.freeModel" = "免費模型";
 "provider.llm.openRouter" = "OpenRouter";
 "provider.llm.ollama" = "Ollama 本地";
-"provider.llm.typefluxCloud" = "Typeflux Cloud";
 
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
@@ -325,7 +305,6 @@
 
 "overlay.recording.listening" = "正在聆聽";
 "overlay.recording.quickInputHint" = "快速錄入模式";
-"overlay.recording.personaHint" = "本次請求將使用%@人設進行處理";
 "overlay.ask.guidance" = "你可以詢問任何問題";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";
@@ -379,15 +358,11 @@
 "workflow.ask.selectionRequired" = "「隨便問」需要先選取文字。";
 "workflow.retry.audioMissing" = "重試失敗：缺少音訊檔。";
 "workflow.retry.audioGone" = "重試失敗：音訊檔已不存在。";
-"workflow.typefluxCloud.loginRequired" = "請先登入 Typeflux Cloud，以使用雲端功能。";
-"workflow.llmNotConfigured.missingAPIKey" = "尚未設定大語言模型的 API Key。請前往設定頁面設定，或使用 Typeflux Cloud。";
-"workflow.llmNotConfigured.cloudNotLoggedIn" = "請先登入 Typeflux Cloud，以使用雲端大語言模型。";
+"workflow.llmNotConfigured.missingAPIKey" = "尚未設定大語言模型的 API Key。請前往設定頁面設定。";
 "workflow.llmNotConfigured.incomplete" = "大語言模型設定不完整，請檢查設定。";
 "workflow.llmNotConfigured.action.settings" = "開啟設定";
-"workflow.llmNotConfigured.action.loginCloud" = "登入 Typeflux Cloud";
 "workflow.llmNotConfigured.action.configureCustomModel" = "設定自訂模型";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud 尚未登入，已使用本地語音辨識保留本次輸入。登入後可繼續使用雲端改寫。";
-"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud 尚未登入，本次已保留語音轉寫，但無法完成雲端問答。";
+"workflow.llmNotConfigured.askSkipped" = "本次已保留語音轉寫，但因大語言模型尚未設定，無法完成問答。";
 
 "persona.none.title" = "無人設";
 "persona.none.subtitle" = "直接聽寫，不套用任何人設風格。";
@@ -513,6 +488,7 @@
 "history.clearDialog.message" = "此操作將永久刪除所有歷史記錄及相關音訊檔案，無法復原。";
 "history.toast.retryStarted" = "已開始重試。";
 "history.toast.transcriptCopied" = "轉寫已複製。";
+"history.toast.copyFailed" = "複製轉寫失敗。";
 "history.toast.audioUnavailable" = "音訊檔不可用。";
 "history.toast.audioDownloaded" = "音訊已下載。";
 "history.toast.audioDownloadFailed" = "下載音訊失敗。";
@@ -722,11 +698,9 @@
 "settings.models.useDoubao" = "使用豆包";
 "settings.models.useGroq" = "使用 Groq";
 "settings.models.useSoniox" = "Use Soniox";
-"settings.models.useTypefluxOfficial" = "使用 Typeflux 官方";
-"settings.models.useTypefluxCloud" = "使用 Typeflux Cloud";
+"settings.models.useDeepgram" = "使用 Deepgram";
 "settings.models.badge.local" = "本地";
 "settings.models.badge.api" = "API";
-"settings.models.badge.official" = "官方";
 "settings.models.modelNotConfigured" = "模型未配置";
 "settings.models.builtInDefaultModel" = "內建預設模型";
 "settings.models.builtInDefaultProfile" = "內建預設設定";
@@ -739,8 +713,9 @@
 "settings.models.card.googleCloud.summary" = "透過 Google Cloud Speech-to-Text 執行即時串流語音辨識。";
 "settings.models.card.groq.summary" = "透過 Groq 推理介面進行高速 Whisper 轉寫，預設模型為 whisper-large-v3-turbo。";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages.";
-"settings.models.card.typefluxOfficial.summary" = "Typeflux 內建語音辨識服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
-"settings.models.card.typefluxCloud.summary" = "Typeflux 內建大型語言模型服務。登入 Typeflux 帳號即可使用，無需額外的 API 金鑰。";
+"settings.models.card.deepgram.summary" = "透過 Deepgram Nova-3 進行高準確度多語言雲端轉錄，並自動完成智慧格式化。";
+"settings.models.deepgram.language" = "語音語言";
+"settings.models.deepgram.languageHint" = "自動模式會為每段錄音偵測一種主要語言；Deepgram 暫不支援在同一模型中混合辨識中、日、英三語。";
 "settings.models.card.ollama.summary" = "在本地執行改寫與編輯任務，並可選擇自動準備模型。";
 "settings.models.card.openAICompatible.summary" = "接入遠端 chat-completions 提供方，完成人設改寫與編輯流程。";
 "settings.models.card.custom.summary" = "手動設定任意相容端點，自訂 Base URL、模型與 API Key。";
@@ -795,8 +770,7 @@
 "settings.models.overview.googleCloud" = "語音辨識會直接即時串流到 Google Cloud Speech-to-Text。";
 "settings.models.overview.groq" = "語音辨識由 Groq 的高速推理介面透過 Whisper 模型處理。";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket.";
-"settings.models.overview.typefluxOfficial" = "語音辨識由 Typeflux 內建服務處理。";
-"settings.models.overview.typefluxCloud" = "文字改寫和編輯由 Typeflux 內建大型語言模型服務處理。";
+"settings.models.overview.deepgram" = "錄音會傳送至 Deepgram Nova-3，進行多語言語音辨識和智慧格式化。";
 "settings.models.mode.local" = "本地";
 "settings.models.mode.remote" = "遠端";
 "settings.models.fallback.enabled" = "已啟用回退";
@@ -817,8 +791,7 @@
 "settings.models.focused.googleCloud" = "適合希望使用 Google Cloud Speech-to-Text 進行即時串流辨識的情境。";
 "settings.models.focused.groq" = "適合希望使用 Groq 加速推理進行快速雲端轉寫的情境。";
 "settings.models.focused.soniox" = "Use this for accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
-"settings.models.focused.typefluxOfficial" = "使用 Typeflux 內建語音辨識服務，只需登入即可，無需額外設定。";
-"settings.models.focused.typefluxCloud" = "使用 Typeflux 內建大型語言模型服務進行文字改寫和編輯。只需登入即可，無需額外設定。";
+"settings.models.focused.deepgram" = "適合需要使用 Deepgram Nova-3 進行高準確度多語言雲端轉錄的情境。";
 "settings.models.routing" = "路由行為";
 "settings.models.routing.primaryRecognizer" = "主辨識器";
 "settings.models.routing.primaryRuntime" = "主執行環境";
@@ -834,6 +807,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text 會直接從此 Mac 處理即時串流 ASR。";
 "settings.models.routing.groq" = "Groq 會透過 Whisper 相容轉寫介面以加速推理處理聽寫。";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 透過 Listen API 處理錄音，並進行多語言辨識。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "授權 Google";
@@ -843,12 +817,6 @@
 "settings.models.googleCloud.oauth.disconnected" = "Google 授權已中斷。";
 "settings.models.googleCloud.cloudGatewayHint" = "使用 Project ID 和 API Key 直接呼叫 Google Cloud Speech-to-Text v2 StreamingRecognize。";
 "settings.models.useGoogleCloud" = "使用 Google";
-"settings.models.routing.typefluxOfficial" = "Typeflux 官方透過內建語音辨識服務處理聽寫。";
-"settings.models.routing.typefluxCloud" = "Typeflux Cloud 透過內建大型語言模型服務處理改寫和編輯請求。";
-"settings.models.typefluxOfficial.description" = "Typeflux 官方是我們內建的語音辨識服務。無需 API 金鑰或端點設定——只需登入您的 Typeflux 帳號即可開始聽寫。";
-"settings.models.typefluxOfficial.loginRequired" = "請登入您的 Typeflux 帳號以使用此服務。";
-"settings.models.typefluxCloud.loginRequired" = "請登入您的 Typeflux 帳號以使用此服務。";
-"settings.models.typefluxOfficial.signIn" = "登入";
 "settings.models.routing.fallback" = "回退策略";
 "settings.models.routing.localSetup" = "本地準備";
 "settings.models.routing.readiness" = "就緒狀態";
@@ -880,14 +848,6 @@
 "workflow.localModelDownloadingAlert.failedTitle" = "本地語音模型下載失敗";
 "workflow.localModelDownloadingAlert.failedMessage" = "下載失敗：%@。網路恢復後，再次按快捷鍵即可重新嘗試。";
 "workflow.localModelDownloadingAlert.failedProgress" = "下載失敗";
-"cloud.autoSwitch.title" = "已啟用 Typeflux Cloud";
-"cloud.autoSwitch.body" = "語音辨識與 AI 模型已自動切換為 Typeflux Cloud 雲端服務，可隨時在「設定」中切換回您自己的模型。";
-"cloud.subscriptionSwitch.title" = "是否使用 Typeflux Cloud 雲端模型？";
-"cloud.subscriptionSwitch.body" = "你的訂閱已生效。Typeflux Cloud 可以同時為語音辨識和 AI 改寫提供更穩定順暢的預設體驗。";
-"cloud.subscriptionSwitch.confirm" = "使用 Typeflux Cloud";
-"cloud.subscriptionSwitch.keepCurrent" = "保留目前模型";
-"cloud.subscriptionSwitch.successTitle" = "設定成功";
-"cloud.subscriptionSwitch.successBody" = "語音模型和大語言模型已切換為 Typeflux Cloud。";
 "settings.models.redownload" = "重新下載";
 "settings.models.deleteModelFiles" = "刪除模型檔案";
 "settings.models.redownloadDialog.title" = "重新下載 %@？";
@@ -917,9 +877,6 @@
 
 "onboarding.language.title" = "選擇語言";
 "onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
-"onboarding.account.title" = "歡迎回來";
-"onboarding.account.subtitle" = "解鎖雲端語音辨識與 AI 推理能力";
-"onboarding.account.cloudReady" = "語音辨識與大語言模型服務已就緒，無需額外設定 API 金鑰。";
 
 "onboarding.models.title" = "設定模型";
 "onboarding.models.subtitle" = "選擇語音辨識引擎和語言模型，稍後可在設定中隨時更改。";
@@ -991,7 +948,6 @@
 "onboarding.action.back" = "上一步";
 "onboarding.action.continue" = "下一步";
 "onboarding.action.skip" = "略過";
-"onboarding.account.skip" = "略過，我要自行設定模型";
 "onboarding.action.getStarted" = "開始使用";
 
 // MARK: - Agent 框架
@@ -1084,149 +1040,14 @@
 "agent.jobs.deleteDialog.title" = "刪除任務";
 "agent.jobs.deleteDialog.message" = "確定刪除「%@」嗎？此操作無法復原。";
 
-// MARK: - Auth & Account
 
-"sidebar.accountAccessibility" = "帳號";
 
-"studio.section.account" = "帳號";
-"studio.eyebrow.account" = "帳號";
-"studio.heading.account" = "帳號";
-"studio.search.account" = "搜尋帳號...";
 
-"auth.login.windowTitle" = "登入";
-"auth.login.title" = "歡迎";
-"auth.login.enterEmailSubtitle" = "輸入電子郵件以開始使用";
-"auth.login.loginSubtitle" = "登入您的帳號";
-"auth.login.registerSubtitle" = "建立新帳號";
-"auth.login.activateSubtitle" = "請查收電子郵件中的啟用碼";
-"auth.login.continue" = "繼續";
-"auth.login.signIn" = "登入";
-"auth.login.createAccount" = "建立帳號";
-"auth.login.activate" = "啟用";
-"auth.login.forgotPassword" = "忘記密碼";
-"auth.login.sendResetCode" = "發送重設碼";
-"auth.login.resetPassword" = "重設密碼";
-"auth.login.alreadyHaveResetCode" = "我已經有重設碼了";
-"auth.login.resendActivation" = "沒有收到啟用碼，重新發送";
-"auth.login.resendActivationCountdown" = "%d 秒後可重新發送";
-"auth.login.forgotPasswordHint" = "我們會向 %@ 發送密碼重設碼。";
-"auth.login.activationCodeSent" = "啟用碼已發送，請查收電子郵件。";
-"auth.login.activationCodeResent" = "新的啟用碼已發送，請查收電子郵件。";
-"auth.login.resetCodeSent" = "密碼重設碼已發送，請查收電子郵件。";
-"auth.login.back" = "返回";
-"auth.login.continueWithGoogle" = "使用 Google 帳號登入";
-"auth.login.continueWithGitHub" = "使用 GitHub 帳號登入";
-"auth.login.continueWithApple" = "使用 Apple 帳號登入";
-"auth.login.orDivider" = "或";
-"auth.login.activateHint" = "我們已向 %@ 發送了啟用碼，請在下方輸入。";
 
-"auth.field.email" = "電子郵件";
-"auth.field.password" = "密碼";
-"auth.field.confirmPassword" = "確認密碼";
-"auth.field.name" = "姓名（選填）";
-"auth.field.activationCode" = "啟用碼";
-"auth.field.resetCode" = "重設碼";
-"auth.field.newPassword" = "新密碼";
-"auth.field.confirmNewPassword" = "確認新密碼";
-
-"auth.error.emailRequired" = "請輸入電子郵件地址。";
-"auth.error.passwordRequired" = "請輸入密碼。";
-"auth.error.currentPasswordRequired" = "請輸入目前密碼。";
-"auth.error.passwordMismatch" = "兩次密碼輸入不一致。";
-"auth.error.passwordTooShort" = "密碼至少需要 8 個字元。";
-"auth.error.passwordTooWeak" = "密碼必須包含大寫字母、小寫字母和數字。";
-"auth.error.codeRequired" = "請輸入啟用碼。";
-"auth.error.resetCodeRequired" = "請輸入重設碼。";
-"auth.error.policyAgreementRequired" = "請先同意《使用者協議》和《隱私政策》。";
-"auth.error.unknown" = "發生了未知錯誤。";
-"auth.error.invalidResponse" = "伺服器回應無效。";
-"auth.error.unauthorized" = "登入已過期，請重新登入。";
-"cloud.error.authInvalidCredentials" = "電子郵件或密碼不正確。";
-"cloud.error.authUserExists" = "此電子郵件已註冊帳號。";
-"cloud.error.authUserNotActive" = "請先啟用帳號後再登入。";
-"cloud.error.authCodeInvalid" = "驗證碼無效或已過期。";
-"cloud.error.sessionExpired" = "登入已過期，請重新登入。";
 "cloud.error.validation" = "請求無效，請檢查輸入後重試。";
 "cloud.error.rateLimited" = "請求過於頻繁，請稍後再試。";
-"cloud.error.quotaExceeded" = "Typeflux Cloud 使用額度已用完。";
-"cloud.error.planRequired" = "目前方案不包含此 Typeflux Cloud 功能。請開啟帳號頁面訂閱或管理帳單。";
-"cloud.error.server" = "Typeflux Cloud 暫時無法使用，請稍後再試。";
-"cloud.billing.subscriptionRequired.title" = "需要開通 Typeflux Cloud";
-"cloud.billing.subscriptionRequired.body" = "目前方案暫不包含這項雲端功能。開通會員後即可繼續使用 Typeflux Cloud。";
-"cloud.billing.quotaExceeded.title" = "Typeflux Cloud 額度暫不可用";
-"cloud.billing.quotaExceeded.body" = "目前雲端額度或餘額不足。請前往帳號頁處理訂閱或帳單。";
-"cloud.billing.freeQuotaExceeded.title" = "免費雲端額度已用完";
-"cloud.billing.freeQuotaExceeded.body" = "目前週期的免費雲端額度已用完。你可以前往帳號頁查看用量，或切換其他模型。";
-"cloud.billing.action.openAccount" = "開啟帳號";
-"cloud.billing.action.subscribe" = "訂閱會員";
-"cloud.billing.action.switchModel" = "切換其他模型";
+"cloud.error.server" = "伺服器暫時無法使用，請稍後再試。";
 
-"auth.account.provider" = "登入方式";
-"auth.account.memberSince" = "註冊時間";
-"auth.account.logout" = "登出";
-"auth.account.providerEmail" = "電子郵件與密碼";
-"auth.account.signIn" = "登入帳號";
-"auth.account.passwordSection" = "密碼管理";
-"auth.account.currentPassword" = "目前密碼";
-"auth.account.newPassword" = "新密碼";
-"auth.account.confirmNewPassword" = "確認新密碼";
-"auth.account.changePassword" = "修改密碼";
-"auth.account.changePasswordDialogTitle" = "修改密碼";
-"auth.account.changePasswordDialogSubtitle" = "在彈出對話框中更新密碼，修改後目前裝置將需要重新登入。";
-"auth.account.passwordHint" = "修改密碼後，目前裝置需要重新登入。";
-"auth.account.passwordChangeSuccessTitle" = "修改成功";
-"auth.account.passwordChanged" = "密碼已更新，請重新登入。";
-"auth.account.relogin" = "重新登入";
-"auth.account.signedOutTitle" = "尚未登入";
-"auth.account.signedOutSubtitle" = "登入後即可查看帳號資訊並管理目前工作階段。";
-"auth.account.subscription" = "訂閱";
-"auth.account.subscriptionPlan" = "方案";
-"auth.account.subscriptionStatus" = "狀態";
-"auth.account.subscriptionPeriod" = "計費週期";
-"auth.account.subscriptionBillingCycle" = "帳單週期";
-"auth.account.subscriptionActiveHint" = "您的 Typeflux Cloud 訂閱已啟用。";
-"auth.account.subscriptionFreeHint" = "目前 Free 方案已啟用，可使用 Typeflux Cloud 的免費額度。";
-"auth.account.subscriptionInactiveHint" = "目前訂閱暫不能使用 Typeflux Cloud 功能。";
-"auth.account.subscriptionRequiredHint" = "訂閱後即可使用 Typeflux Cloud 語音辨識和模型推理。";
-"auth.account.subscriptionNoPlan" = "未訂閱";
-"auth.account.subscriptionFreePlan" = "Free";
-"auth.account.subscriptionDefaultPlan" = "Pro";
-"auth.account.subscriptionStatusNone" = "未訂閱";
-"auth.account.subscriptionStatusFree" = "Free";
-"auth.account.subscriptionStatusAvailable" = "可用";
-"auth.account.subscriptionStatusActive" = "有效";
-"auth.account.subscriptionStatusTrialing" = "試用中";
-"auth.account.subscriptionStatusPastDue" = "逾期";
-"auth.account.subscriptionStatusCanceled" = "已取消";
-"auth.account.subscriptionStatusUnpaid" = "未付款";
-"auth.account.subscriptionPeriodUnavailable" = "不可用";
-"auth.account.subscriptionEndsOn" = "%@ 到期";
-"auth.account.subscriptionRenewsOn" = "%@ 續費";
-"auth.account.subscriptionPeriodRange" = "%@ 至 %@";
-"auth.account.subscriptionPeriodUntil" = "至 %@";
-"auth.account.refreshSubscription" = "重新整理";
-"auth.account.subscribe" = "訂閱";
-"auth.account.manageBilling" = "管理帳單";
-"auth.account.usage" = "使用明細";
-"auth.account.usagePeriodHint" = "統計週期：%@ 至 %@。";
-"auth.account.usageCycleUnavailable" = "統計週期暫不可用。";
-"auth.account.usageAudio" = "音訊";
-"auth.account.usageTokens" = "Token";
-"auth.account.usageRequests" = "請求";
-"auth.account.usageTranscripts" = "轉寫字元";
-"auth.account.usageAnswers" = "回覆字元";
-"auth.account.refreshUsage" = "重新整理用量";
-"auth.account.usageQuota" = "雲端額度";
-"auth.account.usageFreeQuota" = "每月免費額度";
-"auth.account.usageQuotaRemaining" = "剩餘 %@";
-"auth.account.usageQuotaUnlimited" = "不限額度";
-"auth.account.usageQuotaUsedOfLimit" = "已用 %@ / %@（%@）";
-"auth.account.usageQuotaUsedUnlimited" = "已用 %@";
-"auth.account.usageQuotaUnavailable" = "額度暫不可用。";
-"auth.account.usageSeconds" = "%.0f 秒";
-"auth.account.usageMinutes" = "%.1f 分鐘";
-"auth.account.usageHours" = "%.1f 小時";
-"auth.account.usageDays" = "%.1f 天";
 
 "agent.clarification.windowTitle" = "助手需要確認";
 "agent.clarification.assistantSectionTitle" = "助手";

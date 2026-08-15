@@ -106,12 +106,11 @@ final class LLMRemoteProviderTests: XCTestCase {
         )
     }
 
-    func testOnboardingDisplayOrderExcludesFreeModelAndTypefluxCloud() {
+    func testOnboardingDisplayOrderExcludesFreeModel() {
         XCTAssertFalse(LLMRemoteProvider.onboardingDisplayOrder.contains(.freeModel))
-        XCTAssertFalse(LLMRemoteProvider.onboardingDisplayOrder.contains(.typefluxCloud))
 
         let expected = LLMRemoteProvider.settingsDisplayOrder.filter {
-            $0 != .freeModel && $0 != .typefluxCloud
+            $0 != .freeModel
         }
         XCTAssertEqual(LLMRemoteProvider.onboardingDisplayOrder, expected)
     }
@@ -120,7 +119,6 @@ final class LLMRemoteProviderTests: XCTestCase {
         XCTAssertEqual(
             LLMRemoteProvider.settingsDisplayOrder,
             [
-                .typefluxCloud,
                 .anthropic,
                 .deepSeek,
                 .freeModel,
@@ -141,13 +139,12 @@ final class LLMRemoteProviderTests: XCTestCase {
         )
     }
 
-    func testSettingsDisplayOrderPinsCloudAndCustomAroundAlphabetizedProviders() {
+    func testSettingsDisplayOrderPinsCustomAfterAlphabetizedProviders() {
         let order = LLMRemoteProvider.settingsDisplayOrder
 
-        XCTAssertEqual(order.first, .typefluxCloud)
         XCTAssertEqual(order.last, .custom)
 
-        let standardProviders = Array(order.dropFirst().dropLast())
+        let standardProviders = Array(order.dropLast())
         XCTAssertEqual(
             standardProviders.map(\.displayName),
             standardProviders.map(\.displayName).sorted {

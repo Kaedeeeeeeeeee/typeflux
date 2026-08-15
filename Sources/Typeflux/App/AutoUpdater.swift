@@ -5,6 +5,14 @@ extension Notification.Name {
     static let autoUpdateStateDidChange = Notification.Name("AutoUpdater.stateDidChange")
 }
 
+enum AutoUpdateAvailability {
+    #if DEBUG
+        static let isEnabled = false
+    #else
+        static let isEnabled = true
+    #endif
+}
+
 @MainActor
 final class AutoUpdater {
     static let shared = AutoUpdater()
@@ -43,7 +51,7 @@ final class AutoUpdater {
     func startAutoCheck(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
         stopAutoCheck()
-        guard settingsStore.autoUpdateEnabled else { return }
+        guard AutoUpdateAvailability.isEnabled, settingsStore.autoUpdateEnabled else { return }
 
         // Initial check after a short delay on app launch
         let initialCheck = DispatchWorkItem { [weak self] in
@@ -72,7 +80,7 @@ final class AutoUpdater {
     // MARK: - Check
 
     func checkForUpdates(manual: Bool = true) {
-        guard state == .idle else { return }
+        guard AutoUpdateAvailability.isEnabled, state == .idle else { return }
 
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
 
@@ -82,11 +90,11 @@ final class AutoUpdater {
             do {
                 let (data, _) = try await executor.execute(apiPath: "/api/v1/app/update") { baseURL in
                     var components = URLComponents(
-                        url: AuthEndpointResolver.resolve(baseURL: baseURL, path: "/api/v1/app/update"),
+                        url: CloudEndpointURLResolver.resolve(baseURL: baseURL, path: "/api/v1/app/update"),
                         resolvingAgainstBaseURL: false
                     ) ?? URLComponents()
                     components.queryItems = AutoUpdateRequestSupport.queryItems(currentVersion: currentVersion)
-                    let url = components.url ?? AuthEndpointResolver.resolve(
+                    let url = components.url ?? CloudEndpointURLResolver.resolve(
                         baseURL: baseURL,
                         path: "/api/v1/app/update"
                     )

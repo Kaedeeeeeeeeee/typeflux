@@ -19,7 +19,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmModel = "gpt-4"
         store.llmAPIKey = ""
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .notConfigured(reason: .missingAPIKey))
@@ -33,7 +33,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmModel = "gpt-4"
         store.llmAPIKey = "sk-test"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .ready)
@@ -46,7 +46,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmBaseURL = ""
         store.llmModel = "model"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(
@@ -62,31 +62,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmBaseURL = "https://example.com/v1"
         store.llmModel = "model"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
-        let status = validator.validate()
-
-        XCTAssertEqual(status, .ready)
-    }
-
-    // MARK: - typefluxCloud
-
-    func testTypefluxCloud_NotLoggedIn() {
-        let store = makeSettingsStore()
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
-        let status = validator.validate()
-
-        XCTAssertEqual(status, .notConfigured(reason: .cloudNotLoggedIn))
-    }
-
-    func testTypefluxCloud_LoggedIn() {
-        let store = makeSettingsStore()
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: true)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .ready)
@@ -100,7 +76,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmRemoteProvider = .freeModel
         store.llmModel = ""
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .notConfigured(reason: .incompleteConfig(details: "Free model not selected")))
@@ -112,7 +88,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.llmRemoteProvider = .freeModel
         store.llmModel = "test-model"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .ready)
@@ -126,7 +102,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.ollamaBaseURL = ""
         store.ollamaModel = "qwen"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(
@@ -141,7 +117,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.ollamaBaseURL = "http://localhost:11434"
         store.ollamaModel = ""
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(
@@ -156,7 +132,7 @@ final class LLMConfigurationValidatorTests: XCTestCase {
         store.ollamaBaseURL = "http://localhost:11434"
         store.ollamaModel = "qwen"
 
-        let validator = LLMConfigurationValidator(settingsStore: store, isLoggedIn: false)
+        let validator = LLMConfigurationValidator(settingsStore: store)
         let status = validator.validate()
 
         XCTAssertEqual(status, .ready)

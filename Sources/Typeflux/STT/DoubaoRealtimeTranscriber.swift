@@ -87,7 +87,6 @@ final class DoubaoRealtimeTranscriber: RecordingPrewarmingTranscriber, RealtimeT
     }
 
     func makeRealtimeTranscriptionSession(
-        scenario _: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession {
         guard let configuration = currentConfiguration() else {

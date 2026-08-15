@@ -11,9 +11,9 @@ enum CloudRequestExecutorError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noEndpointsAvailable:
-            "No Typeflux Cloud endpoints are configured."
+            "No service endpoints are configured."
         case let .allEndpointsFailed(lastError):
-            "All Typeflux Cloud endpoints failed: \(lastError.localizedDescription)"
+            "All service endpoints failed: \(lastError.localizedDescription)"
         case .invalidResponse:
             "Received an invalid HTTP response."
         }
@@ -27,7 +27,7 @@ protocol CloudHTTPSession: Sendable {
 
 extension URLSession: CloudHTTPSession {}
 
-/// Routing policy for Typeflux Cloud requests.
+/// Routing policy for application service requests.
 enum CloudEndpointRoutingStrategy: Sendable, Equatable {
     /// Selects latency-optimized routing only for APIs that are explicitly
     /// allowed to use the fastest endpoint; all other APIs use primary-first.
@@ -38,7 +38,7 @@ enum CloudEndpointRoutingStrategy: Sendable, Equatable {
     case latencyOptimized
 }
 
-/// Executes an HTTP request against the highest-priority Typeflux Cloud
+/// Executes an HTTP request against the highest-priority application service
 /// endpoint, falling back to additional endpoints when the active one returns
 /// a transport error or HTTP 5xx. When the caller provides an API path, only
 /// `/api/v1/chat/` and `/api/v1/asr/` use latency-optimized routing; all other
@@ -96,7 +96,7 @@ struct CloudRequestExecutor: Sendable {
         for (index, endpoint) in endpoints.enumerated() {
             try Task.checkCancellation()
             var request = build(endpoint)
-            TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
+            AppHTTPHeaders.apply(to: &request)
 
             do {
                 let (data, response) = try await session.data(for: request)
@@ -123,8 +123,6 @@ struct CloudRequestExecutor: Sendable {
                 throw CancellationError()
             } catch let error as URLError where error.code == .cancelled {
                 throw CancellationError()
-            } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
-                throw TypefluxCloudBillingError.fromError(error) ?? error
             } catch {
                 await selector.reportFailure(endpoint, error: error)
                 lastError = error

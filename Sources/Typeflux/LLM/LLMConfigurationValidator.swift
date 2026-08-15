@@ -18,15 +18,12 @@ enum LLMConfigurationError: LocalizedError, Equatable {
 
 enum LLMConfigurationFailureReason: Equatable {
     case missingAPIKey
-    case cloudNotLoggedIn
     case incompleteConfig(details: String)
 
     var localizedMessage: String {
         switch self {
         case .missingAPIKey:
             L("workflow.llmNotConfigured.missingAPIKey")
-        case .cloudNotLoggedIn:
-            L("workflow.llmNotConfigured.cloudNotLoggedIn")
         case .incompleteConfig:
             L("workflow.llmNotConfigured.incomplete")
         }
@@ -35,7 +32,6 @@ enum LLMConfigurationFailureReason: Equatable {
 
 struct LLMConfigurationValidator {
     let settingsStore: SettingsStore
-    let isLoggedIn: Bool
 
     func validate() -> LLMConfigurationStatus {
         switch settingsStore.llmProvider {
@@ -51,11 +47,6 @@ struct LLMConfigurationValidator {
 
         case .openAICompatible:
             switch settingsStore.llmRemoteProvider {
-            case .typefluxCloud:
-                return isLoggedIn
-                    ? .ready
-                    : .notConfigured(reason: .cloudNotLoggedIn)
-
             case .freeModel:
                 let model = settingsStore.llmModel.trimmingCharacters(in: .whitespacesAndNewlines)
                 return model.isEmpty

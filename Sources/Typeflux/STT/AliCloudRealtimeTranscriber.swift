@@ -67,7 +67,6 @@ final class AliCloudRealtimeTranscriber: Transcriber, RealtimeTranscriptionSessi
     }
 
     func makeRealtimeTranscriptionSession(
-        scenario _: TypefluxCloudScenario,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> any RealtimeTranscriptionSession {
         let model = settingsStore.aliCloudModel

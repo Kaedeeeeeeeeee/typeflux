@@ -1178,6 +1178,33 @@ extension AXTextInjector {
         return latestSelectionContext
     }
 
+    func activeInsertionTargetContext() -> SelectionContext? {
+        guard let latestInsertionTargetContext else { return nil }
+        guard Date().timeIntervalSince(latestInsertionTargetContext.capturedAt)
+            <= Self.insertionTargetContextLifetime
+        else {
+            self.latestInsertionTargetContext = nil
+            return nil
+        }
+        return latestInsertionTargetContext
+    }
+
+    func restoreInsertionTargetContext(_ context: SelectionContext) -> Bool {
+        restoreSelectionContext(context)
+
+        let focusedElementMatches: Bool = if let processID = context.processID,
+                                             let focused = focusedElement(for: processID) {
+            CFEqual(focused, context.element)
+        } else {
+            false
+        }
+        return Self.isCapturedInsertionTargetRestored(
+            targetProcessID: context.processID,
+            frontmostProcessID: frontmostProcessID(),
+            focusedElementMatches: focusedElementMatches
+        )
+    }
+
     func restoreSelectionContext(_ context: SelectionContext) {
         let needsReactivation = Self.shouldReactivateProcessForSelectionRestore(
             targetProcessID: context.processID,

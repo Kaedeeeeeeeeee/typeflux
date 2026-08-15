@@ -78,25 +78,6 @@
 "studio.search.settings" = "검색 설정...";
 
 "settings.general" = "일반";
-"settings.servers.title" = "서버";
-"settings.servers.api.title" = "API 서버";
-"settings.servers.api.subtitle" = "계정, 클라우드 AI 및 앱 요청에 사용할 서버입니다.";
-"settings.servers.asr.title" = "음성 인식 서버";
-"settings.servers.asr.subtitle" = "Typeflux 음성 인식에 사용할 서버입니다.";
-"settings.servers.automatic" = "자동(가장 빠른 서버)";
-"settings.servers.speedTest.title" = "서버 속도 테스트";
-"settings.servers.speedTest.subtitle" = "사용 가능한 모든 주소를 테스트하고 위 메뉴에 지연 시간을 표시합니다.";
-"settings.servers.speedTest.action" = "속도 테스트";
-"settings.servers.speedTest.testing" = "테스트 중";
-"settings.servers.speedTest.summary" = "테스트 완료: API %d/%d 사용 가능, 음성 인식 %d/%d 사용 가능.";
-"settings.servers.option.notTested" = "%@ · 테스트 안 함";
-"settings.servers.option.unavailable" = "%@ · 사용 불가";
-"settings.servers.option.latency" = "%@ · %d ms";
-"settings.servers.tag.fast" = "빠름 · %d ms";
-"settings.servers.tag.average" = "보통 · %d ms";
-"settings.servers.tag.slow" = "느림 · %d ms";
-"settings.servers.tag.unavailable" = "사용 불가";
-"settings.servers.tag.notTested" = "테스트 안 함";
 "settings.launchAtLogin.title" = "로그인 시 실행";
 "settings.launchAtLogin.subtitle" = "Mac에 로그인한 후 자동으로 Typeflux을 시작하세요.";
 "settings.activationHotkey" = "음성 단축키";
@@ -269,13 +250,12 @@
 "provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
-"provider.stt.typefluxOfficial" = "Typeflux Cloud";
+"provider.stt.deepgram" = "Deepgram";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "맞춤";
 "provider.llm.freeModel" = "무료 모델";
 "provider.llm.openRouter" = "OpenRouter";
 "provider.llm.ollama" = "Local Ollama";
-"provider.llm.typefluxCloud" = "Typeflux Cloud";
 
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
@@ -323,7 +303,6 @@
 
 "overlay.recording.listening" = "듣기";
 "overlay.recording.quickInputHint" = "빠른 입력 모드";
-"overlay.recording.personaHint" = "이번 요청은 %@ 페르소나로 처리됩니다";
 "overlay.ask.guidance" = "선택한 텍스트에 관해 무엇이든 물어보세요";
 "overlay.processing.transcribing" = "생각 중";
 "overlay.processing.thinking" = "생각 중";
@@ -377,15 +356,11 @@
 "workflow.ask.selectionRequired" = "무엇이든 물어보세요. 먼저 선택한 텍스트가 필요합니다.";
 "workflow.retry.audioMissing" = "재시도 실패: 오디오 파일이 없습니다.";
 "workflow.retry.audioGone" = "재시도 실패: 오디오 파일이 더 이상 존재하지 않습니다.";
-"workflow.typefluxCloud.loginRequired" = "클라우드 기능을 사용하려면 Typeflux Cloud에 로그인하세요.";
-"workflow.llmNotConfigured.missingAPIKey" = "LLM API 키가 구성되지 않았습니다. 설정에서 구성하거나 Typeflux Cloud를 사용하세요.";
-"workflow.llmNotConfigured.cloudNotLoggedIn" = "클우드 언어 모델을 사용하려면 Typeflux Cloud에 로그인하세요.";
+"workflow.llmNotConfigured.missingAPIKey" = "LLM API 키가 구성되지 않았습니다. 설정에서 구성해 주세요.";
 "workflow.llmNotConfigured.incomplete" = "LLM 구성이 불완전합니다. 설정을 확인하세요.";
 "workflow.llmNotConfigured.action.settings" = "설정 열기";
-"workflow.llmNotConfigured.action.loginCloud" = "Typeflux Cloud 로그인";
 "workflow.llmNotConfigured.action.configureCustomModel" = "사용자 지정 모델 구성";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud에 로그인되어 있지 않습니다. 이번 입력이 끊기지 않도록 로컬 음성 인식을 사용했습니다. 로그인하면 클라우드 다시 쓰기를 사용할 수 있습니다.";
-"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud에 로그인되어 있지 않습니다. 음성 전사는 저장했지만 클라우드 Q&A는 실행할 수 없습니다.";
+"workflow.llmNotConfigured.askSkipped" = "음성 전사는 저장했지만 언어 모델이 구성되지 않아 Q&A를 실행할 수 없습니다.";
 
 "persona.none.title" = "페르소나 없음";
 "persona.none.subtitle" = "페르소나 스타일링 없이 지시하세요.";
@@ -506,6 +481,7 @@
 "history.clearDialog.message" = "모든 기록과 관련 오디오 파일이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.";
 "history.toast.retryStarted" = "재시도가 시작되었습니다.";
 "history.toast.transcriptCopied" = "성적 증명서가 복사되었습니다.";
+"history.toast.copyFailed" = "텍스트를 복사하지 못했습니다.";
 "history.toast.audioUnavailable" = "오디오 파일을 사용할 수 없습니다.";
 "history.toast.audioDownloaded" = "오디오가 다운로드되었습니다.";
 "history.toast.audioDownloadFailed" = "오디오를 다운로드하지 못했습니다.";
@@ -715,11 +691,9 @@
 "settings.models.useDoubao" = "두바오 사용";
 "settings.models.useGroq" = "Groq 사용";
 "settings.models.useSoniox" = "Use Soniox";
-"settings.models.useTypefluxOfficial" = "Typeflux 공식 사용";
-"settings.models.useTypefluxCloud" = "Typeflux Cloud 사용";
+"settings.models.useDeepgram" = "Deepgram 사용";
 "settings.models.badge.local" = "지역";
 "settings.models.badge.api" = "API";
-"settings.models.badge.official" = "공식";
 "settings.models.modelNotConfigured" = "모델이 구성되지 않았습니다.";
 "settings.models.builtInDefaultModel" = "기본 모델 내장";
 "settings.models.builtInDefaultProfile" = "내장된 기본 프로필";
@@ -732,8 +706,9 @@
 "settings.models.card.googleCloud.summary" = "Google Cloud Speech-to-Text를 통한 실시간 스트리밍 음성 인식.";
 "settings.models.card.groq.summary" = "Groq 추론 엔드포인트를 통한 빠른 Whisper 전사. 기본 모델은 whisper-large-v3-turbo입니다.";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages.";
-"settings.models.card.typefluxOfficial.summary" = "Typeflux 내장 음성 인식 서비스입니다. Typeflux 계정으로 로그인하면 바로 사용할 수 있습니다. 추가 API 키가 필요 없습니다.";
-"settings.models.card.typefluxCloud.summary" = "Typeflux 내장 대형 언어 모델 서비스입니다. Typeflux 계정으로 로그인하면 바로 사용할 수 있습니다. 추가 API 키가 필요 없습니다.";
+"settings.models.card.deepgram.summary" = "Deepgram Nova-3를 통한 정확한 다국어 클라우드 전사와 자동 스마트 서식.";
+"settings.models.deepgram.language" = "음성 언어";
+"settings.models.deepgram.languageHint" = "자동 모드는 녹음마다 하나의 주요 언어를 감지합니다. Deepgram은 현재 하나의 모델에서 중국어·일본어·영어 코드 전환을 지원하지 않습니다.";
 "settings.models.card.ollama.summary" = "선택적 자동 모델 준비를 통해 재작성 및 편집 명령을 로컬로 실행합니다.";
 "settings.models.card.openAICompatible.summary" = "페르소나 재작성 및 편집 워크플로를 위해 원격 채팅 완료 공급자를 연결하세요.";
 "settings.models.card.custom.summary" = "자체 기본 URL, 모델 및 API 키를 사용하여 호환 가능한 엔드포인트를 수동으로 구성합니다.";
@@ -788,8 +763,7 @@
 "settings.models.overview.googleCloud" = "음성 인식은 Google Cloud Speech-to-Text로 직접 실시간 스트리밍됩니다.";
 "settings.models.overview.groq" = "음성 인식은 Groq의 고속 추론 엔드포인트가 Whisper 모델을 사용하여 처리합니다.";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket.";
-"settings.models.overview.typefluxOfficial" = "음성 인식은 Typeflux 내장 서비스로 처리됩니다.";
-"settings.models.overview.typefluxCloud" = "텍스트 재작성과 편집은 Typeflux 내장 LLM 서비스로 처리됩니다.";
+"settings.models.overview.deepgram" = "녹음된 오디오를 Deepgram Nova-3로 전송해 다국어 음성 인식과 스마트 서식을 처리합니다.";
 "settings.models.mode.local" = "지역";
 "settings.models.mode.remote" = "원격";
 "settings.models.fallback.enabled" = "대체 활성화됨";
@@ -810,8 +784,7 @@
 "settings.models.focused.googleCloud" = "Google Cloud Speech-to-Text의 실시간 스트리밍 인식을 원할 때 사용하세요.";
 "settings.models.focused.groq" = "Groq의 고속 추론을 사용한 빠른 클라우드 전사를 원할 때 이 기능을 사용하세요.";
 "settings.models.focused.soniox" = "Use this for accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
-"settings.models.focused.typefluxOfficial" = "Typeflux 내장 음성 인식 서비스를 사용합니다. 로그인만 하면 추가 설정 없이 사용 가능합니다.";
-"settings.models.focused.typefluxCloud" = "Typeflux 내장 LLM 서비스로 텍스트 재작성과 편집을 사용합니다. 로그인만 하면 추가 설정 없이 사용 가능합니다.";
+"settings.models.focused.deepgram" = "Deepgram Nova-3로 정확한 다국어 클라우드 전사가 필요할 때 사용합니다.";
 "settings.models.routing" = "라우팅 동작";
 "settings.models.routing.primaryRecognizer" = "기본 인식기";
 "settings.models.routing.primaryRuntime" = "기본 런타임";
@@ -827,6 +800,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text는 이 Mac에서 직접 실시간 스트리밍 ASR을 처리합니다.";
 "settings.models.routing.groq" = "Groq는 Whisper 호환 전사 엔드포인트를 통한 고속 추론으로 받아쓰기를 처리합니다.";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3는 Listen API를 통해 녹음을 처리하고 다국어 인식을 수행합니다.";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "Google 인증";
@@ -836,12 +810,6 @@
 "settings.models.googleCloud.oauth.disconnected" = "Google 인증 연결을 해제했습니다.";
 "settings.models.googleCloud.cloudGatewayHint" = "Project ID와 API Key로 Google Cloud Speech-to-Text v2 StreamingRecognize를 직접 호출합니다.";
 "settings.models.useGoogleCloud" = "Google 사용";
-"settings.models.routing.typefluxOfficial" = "Typeflux 공식은 내장 음성 인식 서비스로 받아쓰기를 처리합니다.";
-"settings.models.routing.typefluxCloud" = "Typeflux Cloud는 내장 LLM 서비스로 재작성 및 편집 요청을 처리합니다.";
-"settings.models.typefluxOfficial.description" = "Typeflux 공식은 내장 음성 인식 서비스입니다. API 키나 엔드포인트 설정이 필요 없습니다. Typeflux 계정으로 로그인하면 바로 받아쓰기를 시작할 수 있습니다.";
-"settings.models.typefluxOfficial.loginRequired" = "이 서비스를 사용하려면 Typeflux 계정으로 로그인해 주세요.";
-"settings.models.typefluxCloud.loginRequired" = "이 서비스를 사용하려면 Typeflux 계정으로 로그인해 주세요.";
-"settings.models.typefluxOfficial.signIn" = "로그인";
 "settings.models.routing.fallback" = "대체";
 "settings.models.routing.localSetup" = "로컬 설정";
 "settings.models.routing.readiness" = "준비 상태";
@@ -873,14 +841,6 @@
 "workflow.localModelDownloadingAlert.failedTitle" = "로컬 음성 모델 다운로드 실패";
 "workflow.localModelDownloadingAlert.failedMessage" = "다운로드에 실패했습니다: %@. 네트워크가 사용 가능할 때 단축키를 다시 누르면 재시도할 수 있습니다.";
 "workflow.localModelDownloadingAlert.failedProgress" = "다운로드 실패";
-"cloud.autoSwitch.title" = "Typeflux Cloud이(가) 활성화되었습니다";
-"cloud.autoSwitch.body" = "음성 인식과 AI 모델이 Typeflux Cloud로 전환되었습니다. 「설정」에서 언제든지 본인의 모델로 되돌릴 수 있습니다.";
-"cloud.subscriptionSwitch.title" = "Typeflux Cloud 모델을 사용하시겠습니까?";
-"cloud.subscriptionSwitch.body" = "구독이 활성화되었습니다. Typeflux Cloud는 음성 인식과 AI 다시 쓰기 모두에서 더 매끄러운 기본 경험을 제공할 수 있습니다.";
-"cloud.subscriptionSwitch.confirm" = "Typeflux Cloud 사용";
-"cloud.subscriptionSwitch.keepCurrent" = "현재 모델 유지";
-"cloud.subscriptionSwitch.successTitle" = "설정 완료";
-"cloud.subscriptionSwitch.successBody" = "음성 모델과 대규모 언어 모델이 Typeflux Cloud로 전환되었습니다.";
 "settings.models.redownload" = "다시 다운로드";
 "settings.models.deleteModelFiles" = "모델 파일 삭제";
 "settings.models.redownloadDialog.title" = "%@을(를) 다시 다운로드하시겠습니까?";
@@ -910,9 +870,6 @@
 
 "onboarding.language.title" = "언어를 선택하세요";
 "onboarding.language.subtitle" = "Typeflux 인터페이스의 표시 언어를 선택하세요.";
-"onboarding.account.title" = "다시 오신 것을 환영합니다";
-"onboarding.account.subtitle" = "클라우드 음성 인식과 AI 추론 기능을 해방하세요";
-"onboarding.account.cloudReady" = "음성 인식 및 대형 언어 모델 서비스가 준비되었습니다. 추가 API 키가 필요 없습니다.";
 
 "onboarding.models.title" = "모델 설정";
 "onboarding.models.subtitle" = "음성 인식기와 언어 모델을 선택하세요. 언제든지 설정에서 변경할 수 있습니다.";
@@ -984,7 +941,6 @@
 "onboarding.action.back" = "이전";
 "onboarding.action.continue" = "다음";
 "onboarding.action.skip" = "건너뛰기";
-"onboarding.account.skip" = "건너뛰고 내 모델 설정";
 "onboarding.action.getStarted" = "시작하기";
 
 // MARK: - Agent Framework
@@ -1073,149 +1029,14 @@
 "agent.jobs.deleteDialog.title" = "작업 삭제";
 "agent.jobs.deleteDialog.message" = "\"%@\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.";
 
-// MARK: - Auth & Account
 
-"sidebar.accountAccessibility" = "계정";
 
-"studio.section.account" = "계정";
-"studio.eyebrow.account" = "계정";
-"studio.heading.account" = "계정";
-"studio.search.account" = "계정 검색...";
 
-"auth.login.windowTitle" = "로그인";
-"auth.login.title" = "환영합니다";
-"auth.login.enterEmailSubtitle" = "이메일을 입력하여 시작하세요";
-"auth.login.loginSubtitle" = "계정에 로그인";
-"auth.login.registerSubtitle" = "새 계정 만들기";
-"auth.login.activateSubtitle" = "이메일로 전송된 활성화 코드를 확인하세요";
-"auth.login.continue" = "계속";
-"auth.login.signIn" = "로그인";
-"auth.login.createAccount" = "계정 만들기";
-"auth.login.activate" = "활성화";
-"auth.login.forgotPassword" = "비밀번호를 잊으셨나요";
-"auth.login.sendResetCode" = "재설정 코드 보내기";
-"auth.login.resetPassword" = "비밀번호 재설정";
-"auth.login.alreadyHaveResetCode" = "이미 재설정 코드가 있습니다";
-"auth.login.resendActivation" = "코드를 받지 못했나요? 다시 보내기";
-"auth.login.resendActivationCountdown" = "%d초 후 다시 보낼 수 있습니다";
-"auth.login.forgotPasswordHint" = "%@로 비밀번호 재설정 코드를 보냅니다.";
-"auth.login.activationCodeSent" = "활성화 코드를 보냈습니다. 이메일을 확인해 주세요.";
-"auth.login.activationCodeResent" = "새 활성화 코드를 다시 보냈습니다.";
-"auth.login.resetCodeSent" = "비밀번호 재설정 코드를 보냈습니다. 이메일을 확인해 주세요.";
-"auth.login.back" = "뒤로";
-"auth.login.continueWithGoogle" = "Google로 로그인";
-"auth.login.continueWithGitHub" = "GitHub로 로그인";
-"auth.login.continueWithApple" = "Apple로 로그인";
-"auth.login.orDivider" = "또는";
-"auth.login.activateHint" = "%@(으)로 활성화 코드를 보냈습니다. 아래에 입력해 주세요.";
 
-"auth.field.email" = "이메일";
-"auth.field.password" = "비밀번호";
-"auth.field.confirmPassword" = "비밀번호 확인";
-"auth.field.name" = "이름 (선택)";
-"auth.field.activationCode" = "활성화 코드";
-"auth.field.resetCode" = "재설정 코드";
-"auth.field.newPassword" = "새 비밀번호";
-"auth.field.confirmNewPassword" = "새 비밀번호 확인";
-
-"auth.error.emailRequired" = "이메일 주소를 입력해 주세요.";
-"auth.error.passwordRequired" = "비밀번호를 입력해 주세요.";
-"auth.error.currentPasswordRequired" = "현재 비밀번호를 입력해 주세요.";
-"auth.error.passwordMismatch" = "비밀번호가 일치하지 않습니다.";
-"auth.error.passwordTooShort" = "비밀번호는 8자 이상이어야 합니다.";
-"auth.error.passwordTooWeak" = "비밀번호에는 대문자, 소문자, 숫자가 포함되어야 합니다.";
-"auth.error.codeRequired" = "활성화 코드를 입력해 주세요.";
-"auth.error.resetCodeRequired" = "재설정 코드를 입력해 주세요.";
-"auth.error.policyAgreementRequired" = "먼저 이용약관과 개인정보 처리방침에 동의해 주세요.";
-"auth.error.unknown" = "알 수 없는 오류가 발생했습니다.";
-"auth.error.invalidResponse" = "서버 응답이 잘못되었습니다.";
-"auth.error.unauthorized" = "세션이 만료되었습니다. 다시 로그인해 주세요.";
-"cloud.error.authInvalidCredentials" = "이메일 또는 비밀번호가 올바르지 않습니다.";
-"cloud.error.authUserExists" = "이 이메일로 가입된 계정이 이미 있습니다.";
-"cloud.error.authUserNotActive" = "로그인하기 전에 계정을 활성화해 주세요.";
-"cloud.error.authCodeInvalid" = "인증 코드가 잘못되었거나 만료되었습니다.";
-"cloud.error.sessionExpired" = "세션이 만료되었습니다. 다시 로그인해 주세요.";
 "cloud.error.validation" = "요청이 올바르지 않습니다. 입력을 확인한 뒤 다시 시도해 주세요.";
 "cloud.error.rateLimited" = "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
-"cloud.error.quotaExceeded" = "Typeflux Cloud 사용 한도를 모두 사용했습니다.";
-"cloud.error.planRequired" = "현재 요금제에는 이 Typeflux Cloud 기능이 포함되어 있지 않습니다. 계정 화면에서 구독하거나 결제를 관리해 주세요.";
-"cloud.error.server" = "Typeflux Cloud를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.";
-"cloud.billing.subscriptionRequired.title" = "Typeflux Cloud 구독이 필요합니다";
-"cloud.billing.subscriptionRequired.body" = "현재 요금제에는 이 클라우드 기능이 포함되어 있지 않습니다. 구독하면 Typeflux Cloud를 계속 사용할 수 있습니다.";
-"cloud.billing.quotaExceeded.title" = "Typeflux Cloud 한도를 사용할 수 없습니다";
-"cloud.billing.quotaExceeded.body" = "현재 클라우드 한도 또는 크레딧을 사용할 수 없습니다. 계정 화면에서 구독 또는 결제를 확인해 주세요.";
-"cloud.billing.freeQuotaExceeded.title" = "무료 클라우드 크레딧을 모두 사용했습니다";
-"cloud.billing.freeQuotaExceeded.body" = "이번 기간의 무료 클라우드 크레딧을 모두 사용했습니다. 계정에서 사용량을 확인하거나 다른 모델로 전환하세요.";
-"cloud.billing.action.openAccount" = "계정 열기";
-"cloud.billing.action.subscribe" = "구독하기";
-"cloud.billing.action.switchModel" = "다른 모델로 전환";
+"cloud.error.server" = "서버를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.";
 
-"auth.account.provider" = "로그인 방법";
-"auth.account.memberSince" = "가입일";
-"auth.account.logout" = "로그아웃";
-"auth.account.providerEmail" = "이메일 및 비밀번호";
-"auth.account.signIn" = "로그인";
-"auth.account.passwordSection" = "비밀번호 관리";
-"auth.account.currentPassword" = "현재 비밀번호";
-"auth.account.newPassword" = "새 비밀번호";
-"auth.account.confirmNewPassword" = "새 비밀번호 확인";
-"auth.account.changePassword" = "비밀번호 변경";
-"auth.account.changePasswordDialogTitle" = "비밀번호 변경";
-"auth.account.changePasswordDialogSubtitle" = "대화상자에서 비밀번호를 변경합니다. 변경 후 이 기기에서 다시 로그인해야 합니다.";
-"auth.account.passwordHint" = "비밀번호를 변경하면 이 기기에서 다시 로그인해야 합니다.";
-"auth.account.passwordChangeSuccessTitle" = "변경 완료";
-"auth.account.passwordChanged" = "비밀번호가 변경되었습니다. 다시 로그인해 주세요.";
-"auth.account.relogin" = "다시 로그인";
-"auth.account.signedOutTitle" = "로그인되지 않음";
-"auth.account.signedOutSubtitle" = "로그인하면 계정 정보를 확인하고 현재 세션을 관리할 수 있습니다.";
-"auth.account.subscription" = "구독";
-"auth.account.subscriptionPlan" = "요금제";
-"auth.account.subscriptionStatus" = "상태";
-"auth.account.subscriptionPeriod" = "결제 기간";
-"auth.account.subscriptionBillingCycle" = "청구 주기";
-"auth.account.subscriptionActiveHint" = "Typeflux Cloud 구독이 활성화되어 있습니다.";
-"auth.account.subscriptionFreeHint" = "Free 요금제가 활성화되어 있으며 Typeflux Cloud 무료 사용량을 이용할 수 있습니다.";
-"auth.account.subscriptionInactiveHint" = "현재 구독으로는 Typeflux Cloud 기능을 사용할 수 없습니다.";
-"auth.account.subscriptionRequiredHint" = "구독하면 Typeflux Cloud 음성 인식과 모델 추론을 사용할 수 있습니다.";
-"auth.account.subscriptionNoPlan" = "구독 없음";
-"auth.account.subscriptionFreePlan" = "Free";
-"auth.account.subscriptionDefaultPlan" = "Pro";
-"auth.account.subscriptionStatusNone" = "구독 없음";
-"auth.account.subscriptionStatusFree" = "Free";
-"auth.account.subscriptionStatusAvailable" = "사용 가능";
-"auth.account.subscriptionStatusActive" = "활성";
-"auth.account.subscriptionStatusTrialing" = "체험";
-"auth.account.subscriptionStatusPastDue" = "연체";
-"auth.account.subscriptionStatusCanceled" = "취소됨";
-"auth.account.subscriptionStatusUnpaid" = "미결제";
-"auth.account.subscriptionPeriodUnavailable" = "사용 불가";
-"auth.account.subscriptionEndsOn" = "%@ 종료";
-"auth.account.subscriptionRenewsOn" = "%@ 갱신";
-"auth.account.subscriptionPeriodRange" = "%@ ~ %@";
-"auth.account.subscriptionPeriodUntil" = "%@까지";
-"auth.account.refreshSubscription" = "새로고침";
-"auth.account.subscribe" = "구독";
-"auth.account.manageBilling" = "결제 관리";
-"auth.account.usage" = "사용 상세";
-"auth.account.usagePeriodHint" = "통계 기간: %@부터 %@까지.";
-"auth.account.usageCycleUnavailable" = "통계 기간을 아직 사용할 수 없습니다.";
-"auth.account.usageAudio" = "오디오";
-"auth.account.usageTokens" = "토큰";
-"auth.account.usageRequests" = "요청";
-"auth.account.usageTranscripts" = "전사 문자";
-"auth.account.usageAnswers" = "답변 문자";
-"auth.account.refreshUsage" = "사용량 새로고침";
-"auth.account.usageQuota" = "클라우드 크레딧";
-"auth.account.usageFreeQuota" = "월간 무료 크레딧";
-"auth.account.usageQuotaRemaining" = "%@ 남음";
-"auth.account.usageQuotaUnlimited" = "무제한";
-"auth.account.usageQuotaUsedOfLimit" = "%@ / %@ 사용됨(%@)";
-"auth.account.usageQuotaUsedUnlimited" = "%@ 사용됨";
-"auth.account.usageQuotaUnavailable" = "크레딧 한도를 아직 사용할 수 없습니다.";
-"auth.account.usageSeconds" = "%.0f초";
-"auth.account.usageMinutes" = "%.1f분";
-"auth.account.usageHours" = "%.1f시간";
-"auth.account.usageDays" = "%.1f일";
 
 "agent.clarification.windowTitle" = "어시스턴트 확인 필요";
 "agent.clarification.assistantSectionTitle" = "어시스턴트";

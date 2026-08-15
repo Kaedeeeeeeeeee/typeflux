@@ -44,7 +44,7 @@ struct CloudEndpointSelectorConfig: Sendable {
 }
 
 /// Actor that tracks per-endpoint latency and health for the configured
-/// Typeflux Cloud servers, and chooses the order callers should try them in.
+/// service endpoints, and chooses the order callers should try them in.
 ///
 /// The selector is intentionally storage-only: a separate scheduler is
 /// responsible for invoking `probeAll()` periodically. This split keeps the

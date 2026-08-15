@@ -11,12 +11,10 @@ private struct RemoteSTTRoute {
 extension STTRouter {
     func transcribeStream(
         audioFile: AudioFile,
-        scenario: TypefluxCloudScenario = .voiceInput,
-        optimize: Bool = true,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         switch settingsStore.sttProvider {
-        case .freeModel, .whisperAPI, .aliCloud, .doubaoRealtime, .googleCloud, .soniox:
+        case .freeModel, .whisperAPI, .aliCloud, .doubaoRealtime, .googleCloud, .soniox, .deepgram:
             try await transcribeWithRemoteProvider(
                 route: remoteSTTRoute(for: settingsStore.sttProvider),
                 audioFile: audioFile,
@@ -27,8 +25,6 @@ extension STTRouter {
         case .localModel:
             try await transcribeWithLocalModel(
                 audioFile: audioFile,
-                scenario: scenario,
-                optimize: optimize,
                 onUpdate: onUpdate
             )
         case .multimodalLLM:
@@ -37,45 +33,6 @@ extension STTRouter {
             }
         case .groq:
             try await transcribeWithGroq(audioFile: audioFile, onUpdate: onUpdate)
-        case .typefluxOfficial:
-            try await transcribeWithTypefluxOfficialProvider(
-                audioFile: audioFile,
-                scenario: scenario,
-                optimize: optimize,
-                onUpdate: onUpdate
-            )
-        }
-    }
-
-    // Runs transcription and, if supported, an LLM persona rewrite in the same WebSocket session.
-    // swiftlint:disable:next function_parameter_count
-    func transcribeStreamWithLLMRewrite(
-        audioFile: AudioFile,
-        llmConfig: ASRLLMConfig,
-        scenario: TypefluxCloudScenario,
-        onASRUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void,
-        onLLMStart: @escaping @Sendable () async -> Void,
-        onLLMChunk: @escaping @Sendable (String) async -> Void
-    ) async throws -> (transcript: String, rewritten: String?) {
-        guard let integrated = typefluxOfficial as? TypefluxCloudLLMIntegratedTranscriber else {
-            let transcript = try await transcribeStream(audioFile: audioFile, scenario: scenario, onUpdate: onASRUpdate)
-            return (transcript: transcript, rewritten: nil)
-        }
-        do {
-            return try await integrated.transcribeStreamWithLLMRewrite(
-                audioFile: audioFile,
-                llmConfig: llmConfig,
-                scenario: scenario,
-                onASRUpdate: onASRUpdate,
-                onLLMStart: onLLMStart,
-                onLLMChunk: onLLMChunk
-            )
-        } catch {
-            return try await handleIntegratedTypefluxFailure(
-                error,
-                audioFile: audioFile,
-                onASRUpdate: onASRUpdate
-            )
         }
     }
 
@@ -107,8 +64,6 @@ extension STTRouter {
 
     private func transcribeWithLocalModel(
         audioFile: AudioFile,
-        scenario: TypefluxCloudScenario,
-        optimize: Bool,
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         do {
@@ -117,8 +72,6 @@ extension STTRouter {
             return try await handleLocalModelFailure(
                 error,
                 audioFile: audioFile,
-                scenario: scenario,
-                optimize: optimize,
                 onUpdate: onUpdate
             )
         }
@@ -216,6 +169,14 @@ extension STTRouter {
                 failureContext: "Soniox ASR failed",
                 autoModelSuccessMessage: "Auto local model succeeded after Soniox ASR failure",
                 appleFallbackMessage: "Falling back to Apple Speech after Soniox ASR failure"
+            )
+        case .deepgram:
+            return RemoteSTTRoute(
+                provider: deepgram,
+                operationName: "Deepgram STT request",
+                failureContext: "Deepgram ASR failed",
+                autoModelSuccessMessage: "Auto local model succeeded after Deepgram ASR failure",
+                appleFallbackMessage: "Falling back to Apple Speech after Deepgram ASR failure"
             )
         default:
             assertionFailure("Unexpected non-remote STT provider")

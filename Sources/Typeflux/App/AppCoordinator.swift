@@ -7,8 +7,10 @@ final class AppCoordinator {
     private var statusBarController: StatusBarController?
     private var workflowController: WorkflowController?
     private var onboardingWindowController: OnboardingWindowController?
-    private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
-    private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
+
+    static func initialStudioSection(isOnboardingCompleted _: Bool) -> StudioSection {
+        .home
+    }
 
     // swiftlint:disable:next function_body_length
     func start() {
@@ -37,11 +39,7 @@ final class AppCoordinator {
                 localBackendFactory: {
                     LocalModelLivePreviewBackend(
                         transcriberFactory: {
-                            if settingsStore.sttProvider == .typefluxOfficial {
-                                return self.di.autoModelDownloadService.makeTranscriberIfReady()
-                                    ?? UnavailableTranscriber(providerName: "Typeflux Cloud local optimization model")
-                            }
-                            return LocalModelTranscriber(
+                            LocalModelTranscriber(
                                 settingsStore: settingsStore,
                                 modelManager: localModelManager
                             )
@@ -86,20 +84,15 @@ final class AppCoordinator {
         di.autoModelDownloadService.triggerIfNeeded()
         AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore)
-        cloudEndpointProbeScheduler.start()
-        asrPublicConfigRefreshScheduler.start()
-        Task { await AuthState.shared.refreshTokenIfNeeded() }
 
-        if !di.settingsStore.isOnboardingCompleted {
-            presentOnboarding()
-        } else {
-            presentPermissionGuidanceIfNeeded()
-        }
+        presentStudio(
+            initialSection: Self.initialStudioSection(
+                isOnboardingCompleted: di.settingsStore.isOnboardingCompleted
+            )
+        )
     }
 
     func stop() {
-        cloudEndpointProbeScheduler.stop()
-        asrPublicConfigRefreshScheduler.stop()
         workflowController?.stop()
         statusBarController?.stop()
     }
@@ -133,10 +126,14 @@ final class AppCoordinator {
             return
         }
 
+        presentStudio(initialSection: .settings)
+    }
+
+    private func presentStudio(initialSection: StudioSection) {
         SettingsWindowController.shared.show(
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
-            initialSection: .settings,
+            initialSection: initialSection,
             notificationService: di.notificationService,
             onRetryHistory: { [weak self] record in
                 self?.workflowController?.retry(record: record)

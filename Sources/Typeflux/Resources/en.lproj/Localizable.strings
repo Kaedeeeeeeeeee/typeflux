@@ -78,25 +78,6 @@
 "studio.search.settings" = "Search settings...";
 
 "settings.general" = "General";
-"settings.servers.title" = "Servers";
-"settings.servers.api.title" = "API server";
-"settings.servers.api.subtitle" = "Choose the server used for account, cloud AI, and app requests.";
-"settings.servers.asr.title" = "Speech recognition server";
-"settings.servers.asr.subtitle" = "Choose the server used by Typeflux speech recognition.";
-"settings.servers.automatic" = "Automatic (fastest available)";
-"settings.servers.speedTest.title" = "Server speed test";
-"settings.servers.speedTest.subtitle" = "Test all available addresses and show their latency in the menus above.";
-"settings.servers.speedTest.action" = "Test speed";
-"settings.servers.speedTest.testing" = "Testing";
-"settings.servers.speedTest.summary" = "Test complete: API %d/%d available, speech recognition %d/%d available.";
-"settings.servers.option.notTested" = "%@ · Not tested";
-"settings.servers.option.unavailable" = "%@ · Unavailable";
-"settings.servers.option.latency" = "%@ · %d ms";
-"settings.servers.tag.fast" = "Fast · %d ms";
-"settings.servers.tag.average" = "Average · %d ms";
-"settings.servers.tag.slow" = "Slow · %d ms";
-"settings.servers.tag.unavailable" = "Unavailable";
-"settings.servers.tag.notTested" = "Not tested";
 "settings.launchAtLogin.title" = "Launch at Login";
 "settings.launchAtLogin.subtitle" = "Start Typeflux automatically after you sign in to your Mac.";
 "settings.activationHotkey" = "Voice Shortcuts";
@@ -273,13 +254,12 @@
 "provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
-"provider.stt.typefluxOfficial" = "Typeflux Cloud";
+"provider.stt.deepgram" = "Deepgram";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "Custom";
 "provider.llm.freeModel" = "Free Models";
 "provider.llm.openRouter" = "OpenRouter";
 "provider.llm.ollama" = "Local Ollama";
-"provider.llm.typefluxCloud" = "Typeflux Cloud";
 
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
@@ -327,7 +307,6 @@
 
 "overlay.recording.listening" = "Listening";
 "overlay.recording.quickInputHint" = "Quick input mode";
-"overlay.recording.personaHint" = "This request will be processed with the %@ persona";
 "overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.transcribing" = "Thinking";
 "overlay.processing.thinking" = "Thinking";
@@ -381,15 +360,11 @@
 "workflow.ask.selectionRequired" = "Ask Anything requires selected text first.";
 "workflow.retry.audioMissing" = "Retry failed: audio file is missing.";
 "workflow.retry.audioGone" = "Retry failed: audio file no longer exists.";
-"workflow.typefluxCloud.loginRequired" = "Please sign in to Typeflux Cloud to use cloud features.";
-"workflow.llmNotConfigured.missingAPIKey" = "LLM API key is not configured. Please set it in Settings or use Typeflux Cloud.";
-"workflow.llmNotConfigured.cloudNotLoggedIn" = "Please sign in to Typeflux Cloud to use the cloud language model.";
+"workflow.llmNotConfigured.missingAPIKey" = "LLM API key is not configured. Please set it in Settings.";
 "workflow.llmNotConfigured.incomplete" = "LLM configuration is incomplete. Please check your settings.";
 "workflow.llmNotConfigured.action.settings" = "Open Settings";
-"workflow.llmNotConfigured.action.loginCloud" = "Login to Typeflux Cloud";
 "workflow.llmNotConfigured.action.configureCustomModel" = "Configure Custom Model";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud is not signed in. Typeflux used local speech recognition to keep this input flowing. Sign in to enable cloud rewriting.";
-"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud is not signed in. The voice transcript was saved, but cloud Q&A could not run.";
+"workflow.llmNotConfigured.askSkipped" = "The voice transcript was saved, but Q&A could not run because the language model is not configured.";
 
 "persona.none.title" = "No Persona";
 "persona.none.subtitle" = "Dictate without any persona styling.";
@@ -515,6 +490,7 @@
 "history.clearDialog.message" = "This will permanently delete all history records and their associated audio files. This action cannot be undone.";
 "history.toast.retryStarted" = "Retry started.";
 "history.toast.transcriptCopied" = "Transcript copied.";
+"history.toast.copyFailed" = "Failed to copy transcript.";
 "history.toast.audioUnavailable" = "Audio file is unavailable.";
 "history.toast.audioDownloaded" = "Audio downloaded.";
 "history.toast.audioDownloadFailed" = "Failed to download audio.";
@@ -724,11 +700,9 @@
 "settings.models.useDoubao" = "Use Doubao";
 "settings.models.useGroq" = "Use Groq";
 "settings.models.useSoniox" = "Use Soniox";
-"settings.models.useTypefluxOfficial" = "Use Typeflux Official";
-"settings.models.useTypefluxCloud" = "Use Typeflux Cloud";
+"settings.models.useDeepgram" = "Use Deepgram";
 "settings.models.badge.local" = "Local";
 "settings.models.badge.api" = "API";
-"settings.models.badge.official" = "Official";
 "settings.models.modelNotConfigured" = "Model not configured";
 "settings.models.builtInDefaultModel" = "Built-in default model";
 "settings.models.builtInDefaultProfile" = "Built-in default profile";
@@ -741,8 +715,9 @@
 "settings.models.card.googleCloud.summary" = "Real-time streaming recognition through Google Cloud Speech-to-Text.";
 "settings.models.card.groq.summary" = "Fast Whisper transcription via Groq's inference endpoint with whisper-large-v3-turbo as the default model.";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages and low-latency WebSocket streaming.";
-"settings.models.card.typefluxOfficial.summary" = "Typeflux's built-in speech recognition service. Sign in with your Typeflux account to use it — no extra API keys required.";
-"settings.models.card.typefluxCloud.summary" = "Typeflux's built-in LLM service. Sign in with your Typeflux account to use it — no extra API keys required.";
+"settings.models.card.deepgram.summary" = "Accurate multilingual cloud transcription with Deepgram Nova-3 and automatic smart formatting.";
+"settings.models.deepgram.language" = "Speech language";
+"settings.models.deepgram.languageHint" = "Automatic detects one dominant language per recording. Deepgram does not currently support Chinese, Japanese, and English code-switching in one model.";
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
 "settings.models.card.openAICompatible.summary" = "Connect remote chat-completions providers for persona rewriting and editing workflows.";
 "settings.models.card.custom.summary" = "Configure any compatible endpoint manually with your own base URL, model, and API key.";
@@ -799,8 +774,7 @@
 "settings.models.overview.googleCloud" = "Speech recognition is streamed in real time directly to Google Cloud Speech-to-Text.";
 "settings.models.overview.groq" = "Speech recognition is handled by Groq's fast inference endpoint using the Whisper model.";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket with support for 60+ languages.";
-"settings.models.overview.typefluxOfficial" = "Speech recognition is handled by Typeflux's built-in service.";
-"settings.models.overview.typefluxCloud" = "Rewriting and editing are handled by Typeflux's built-in LLM service.";
+"settings.models.overview.deepgram" = "Recorded audio is sent to Deepgram Nova-3 for multilingual speech recognition and smart formatting.";
 "settings.models.mode.local" = "Local";
 "settings.models.mode.remote" = "Remote";
 "settings.models.fallback.enabled" = "Fallback enabled";
@@ -821,8 +795,7 @@
 "settings.models.focused.googleCloud" = "Use this when you want Google Cloud Speech-to-Text with realtime streaming recognition.";
 "settings.models.focused.groq" = "Use this when you want fast cloud transcription with Groq's accelerated Whisper inference.";
 "settings.models.focused.soniox" = "Use this when you want accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
-"settings.models.focused.typefluxOfficial" = "Use Typeflux's built-in speech recognition service. Just sign in — no extra configuration needed.";
-"settings.models.focused.typefluxCloud" = "Use Typeflux's built-in LLM service for rewriting and editing. Just sign in — no extra configuration needed.";
+"settings.models.focused.deepgram" = "Use this when you want accurate multilingual cloud transcription with Deepgram Nova-3.";
 "settings.models.routing" = "Routing behaviour";
 "settings.models.routing.primaryRecognizer" = "Primary recognizer";
 "settings.models.routing.primaryRuntime" = "Primary runtime";
@@ -838,6 +811,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text handles real-time streaming ASR directly from this Mac.";
 "settings.models.routing.groq" = "Groq handles dictation through the Whisper-compatible transcription endpoint with accelerated inference.";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 processes recorded audio through the Listen API with multilingual recognition.";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "Authorize Google";
@@ -847,12 +821,6 @@
 "settings.models.googleCloud.oauth.disconnected" = "Google authorization disconnected.";
 "settings.models.googleCloud.cloudGatewayHint" = "Uses Google Cloud Speech-to-Text v2 StreamingRecognize directly with your Project ID and API key.";
 "settings.models.useGoogleCloud" = "Use Google";
-"settings.models.routing.typefluxOfficial" = "Typeflux Official handles dictation through our built-in speech recognition service.";
-"settings.models.routing.typefluxCloud" = "Typeflux Cloud handles rewrite and edit requests through our built-in LLM service.";
-"settings.models.typefluxOfficial.description" = "Typeflux Official is our built-in speech recognition service. No API keys or endpoint configuration is needed — just sign in with your Typeflux account and start dictating.";
-"settings.models.typefluxCloud.loginRequired" = "Please sign in with your Typeflux account to use this service.";
-"settings.models.typefluxOfficial.loginRequired" = "Please sign in with your Typeflux account to use this service.";
-"settings.models.typefluxOfficial.signIn" = "Sign In";
 "settings.models.routing.fallback" = "Fallback";
 "settings.models.routing.localSetup" = "Local setup";
 "settings.models.routing.readiness" = "Readiness";
@@ -884,14 +852,6 @@
 "workflow.localModelDownloadingAlert.failedTitle" = "Local speech model download failed";
 "workflow.localModelDownloadingAlert.failedMessage" = "The download failed: %@. You can try again by pressing the shortcut when your network is available.";
 "workflow.localModelDownloadingAlert.failedProgress" = "Download failed";
-"cloud.autoSwitch.title" = "Typeflux Cloud is ready";
-"cloud.autoSwitch.body" = "Voice recognition and AI models are now powered by Typeflux Cloud. You can switch back to your own providers anytime in Settings.";
-"cloud.subscriptionSwitch.title" = "Use Typeflux Cloud models?";
-"cloud.subscriptionSwitch.body" = "Your subscription is active. Typeflux Cloud can power both voice recognition and AI rewriting for a smoother default experience.";
-"cloud.subscriptionSwitch.confirm" = "Use Typeflux Cloud";
-"cloud.subscriptionSwitch.keepCurrent" = "Keep Current Models";
-"cloud.subscriptionSwitch.successTitle" = "Models Updated";
-"cloud.subscriptionSwitch.successBody" = "Voice recognition and AI models now use Typeflux Cloud.";
 "settings.models.redownload" = "Re-download";
 "settings.models.deleteModelFiles" = "Delete Model Files";
 "settings.models.redownloadDialog.title" = "Re-download %@?";
@@ -921,9 +881,6 @@
 
 "onboarding.language.title" = "Choose your language";
 "onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
-"onboarding.account.title" = "Welcome Back";
-"onboarding.account.subtitle" = "Unlock cloud speech recognition and AI inference";
-"onboarding.account.cloudReady" = "Speech recognition and language model services ready — no extra API keys needed.";
 
 "onboarding.models.title" = "Set up your models";
 "onboarding.models.subtitle" = "Pick a voice recognizer and a language model. You can change these anytime in Settings.";
@@ -995,7 +952,6 @@
 "onboarding.action.back" = "Previous";
 "onboarding.action.continue" = "Next";
 "onboarding.action.skip" = "Skip";
-"onboarding.account.skip" = "Skip, I'll configure my own models";
 "onboarding.action.getStarted" = "Get Started";
 
 // MARK: - Agent Framework
@@ -1088,149 +1044,14 @@
 "agent.jobs.deleteDialog.title" = "Delete Job";
 "agent.jobs.deleteDialog.message" = "Delete \"%@\"? This action cannot be undone.";
 
-// MARK: - Auth & Account
 
-"sidebar.accountAccessibility" = "Account";
 
-"studio.section.account" = "Account";
-"studio.eyebrow.account" = "Account";
-"studio.heading.account" = "Account";
-"studio.search.account" = "Search account...";
 
-"auth.login.windowTitle" = "Sign In";
-"auth.login.title" = "Welcome";
-"auth.login.enterEmailSubtitle" = "Enter your email to get started";
-"auth.login.loginSubtitle" = "Sign in to your account";
-"auth.login.registerSubtitle" = "Create a new account";
-"auth.login.activateSubtitle" = "Check your email for the activation code";
-"auth.login.continue" = "Continue";
-"auth.login.signIn" = "Sign In";
-"auth.login.createAccount" = "Create Account";
-"auth.login.activate" = "Activate";
-"auth.login.forgotPassword" = "Forgot Password";
-"auth.login.sendResetCode" = "Send Reset Code";
-"auth.login.resetPassword" = "Reset Password";
-"auth.login.alreadyHaveResetCode" = "I already have a reset code";
-"auth.login.resendActivation" = "Didn't receive the code? Resend";
-"auth.login.resendActivationCountdown" = "Resend available in %d seconds";
-"auth.login.forgotPasswordHint" = "We will send a reset code to %@.";
-"auth.login.activationCodeSent" = "Activation code sent. Please check your email.";
-"auth.login.activationCodeResent" = "A new activation code has been sent.";
-"auth.login.resetCodeSent" = "Password reset code sent. Please check your email.";
-"auth.login.back" = "Back";
-"auth.login.continueWithGoogle" = "Continue with Google";
-"auth.login.continueWithGitHub" = "Continue with GitHub";
-"auth.login.continueWithApple" = "Continue with Apple";
-"auth.login.orDivider" = "or";
-"auth.login.activateHint" = "We sent an activation code to %@. Please enter it below.";
 
-"auth.field.email" = "Email";
-"auth.field.password" = "Password";
-"auth.field.confirmPassword" = "Confirm Password";
-"auth.field.name" = "Name (optional)";
-"auth.field.activationCode" = "Activation Code";
-"auth.field.resetCode" = "Reset Code";
-"auth.field.newPassword" = "New Password";
-"auth.field.confirmNewPassword" = "Confirm New Password";
-
-"auth.error.emailRequired" = "Please enter your email address.";
-"auth.error.passwordRequired" = "Please enter your password.";
-"auth.error.currentPasswordRequired" = "Please enter your current password.";
-"auth.error.passwordMismatch" = "Passwords do not match.";
-"auth.error.passwordTooShort" = "Password must be at least 8 characters.";
-"auth.error.passwordTooWeak" = "Password must include uppercase, lowercase, and a number.";
-"auth.error.codeRequired" = "Please enter the activation code.";
-"auth.error.resetCodeRequired" = "Please enter the reset code.";
-"auth.error.policyAgreementRequired" = "Please accept the Terms of Service and Privacy Policy first.";
-"auth.error.unknown" = "An unknown error occurred.";
-"auth.error.invalidResponse" = "Invalid server response.";
-"auth.error.unauthorized" = "Session expired. Please sign in again.";
-"cloud.error.authInvalidCredentials" = "The email or password is incorrect.";
-"cloud.error.authUserExists" = "An account already exists for this email.";
-"cloud.error.authUserNotActive" = "Please activate your account before signing in.";
-"cloud.error.authCodeInvalid" = "The verification code is invalid or has expired.";
-"cloud.error.sessionExpired" = "Session expired. Please sign in again.";
 "cloud.error.validation" = "The request was invalid. Please check the input and try again.";
 "cloud.error.rateLimited" = "Too many requests. Please wait a moment and try again.";
-"cloud.error.quotaExceeded" = "Your Typeflux Cloud usage quota has been exhausted.";
-"cloud.error.planRequired" = "Your current plan does not include this Typeflux Cloud feature. Open Account to subscribe or manage billing.";
-"cloud.error.server" = "Typeflux Cloud is temporarily unavailable. Please try again later.";
-"cloud.billing.subscriptionRequired.title" = "Typeflux Cloud needs a subscription";
-"cloud.billing.subscriptionRequired.body" = "This Cloud feature is not included in your current plan. Subscribe to keep using Typeflux Cloud.";
-"cloud.billing.quotaExceeded.title" = "Typeflux Cloud credits used up";
-"cloud.billing.quotaExceeded.body" = "Your Cloud quota or credits are currently unavailable. Open Account to review your subscription or billing.";
-"cloud.billing.freeQuotaExceeded.title" = "Free Cloud credits used up";
-"cloud.billing.freeQuotaExceeded.body" = "Your free Cloud credits have been used up for this period. Open Account to review usage or switch to another model.";
-"cloud.billing.action.openAccount" = "Open Account";
-"cloud.billing.action.subscribe" = "Subscribe";
-"cloud.billing.action.switchModel" = "Switch Model";
+"cloud.error.server" = "The server is temporarily unavailable. Please try again later.";
 
-"auth.account.provider" = "Login Method";
-"auth.account.memberSince" = "Member Since";
-"auth.account.logout" = "Sign Out";
-"auth.account.providerEmail" = "Email & Password";
-"auth.account.signIn" = "Sign In";
-"auth.account.passwordSection" = "Password";
-"auth.account.currentPassword" = "Current Password";
-"auth.account.newPassword" = "New Password";
-"auth.account.confirmNewPassword" = "Confirm New Password";
-"auth.account.changePassword" = "Change Password";
-"auth.account.changePasswordDialogTitle" = "Change Password";
-"auth.account.changePasswordDialogSubtitle" = "Update your password in a dialog. This device will be signed out after the change.";
-"auth.account.passwordHint" = "Changing your password will sign you out on this device.";
-"auth.account.passwordChangeSuccessTitle" = "Password Changed";
-"auth.account.passwordChanged" = "Password updated. Please sign in again.";
-"auth.account.relogin" = "Sign In Again";
-"auth.account.signedOutTitle" = "Not Signed In";
-"auth.account.signedOutSubtitle" = "Sign in to sync your account and manage your session.";
-"auth.account.subscription" = "Subscription";
-"auth.account.subscriptionPlan" = "Plan";
-"auth.account.subscriptionStatus" = "Status";
-"auth.account.subscriptionPeriod" = "Billing Period";
-"auth.account.subscriptionBillingCycle" = "Billing Cycle";
-"auth.account.subscriptionActiveHint" = "Your Typeflux Cloud subscription is active.";
-"auth.account.subscriptionFreeHint" = "Your Free plan is active with included Typeflux Cloud usage.";
-"auth.account.subscriptionInactiveHint" = "Your subscription is not currently entitled to Typeflux Cloud features.";
-"auth.account.subscriptionRequiredHint" = "Subscribe to unlock Typeflux Cloud speech recognition and model inference.";
-"auth.account.subscriptionNoPlan" = "No Plan";
-"auth.account.subscriptionFreePlan" = "Free";
-"auth.account.subscriptionDefaultPlan" = "Pro";
-"auth.account.subscriptionStatusNone" = "Not Subscribed";
-"auth.account.subscriptionStatusFree" = "Free";
-"auth.account.subscriptionStatusAvailable" = "Available";
-"auth.account.subscriptionStatusActive" = "Active";
-"auth.account.subscriptionStatusTrialing" = "Trial";
-"auth.account.subscriptionStatusPastDue" = "Past Due";
-"auth.account.subscriptionStatusCanceled" = "Canceled";
-"auth.account.subscriptionStatusUnpaid" = "Unpaid";
-"auth.account.subscriptionPeriodUnavailable" = "Not Available";
-"auth.account.subscriptionEndsOn" = "Ends %@";
-"auth.account.subscriptionRenewsOn" = "Renews %@";
-"auth.account.subscriptionPeriodRange" = "%@ to %@";
-"auth.account.subscriptionPeriodUntil" = "Until %@";
-"auth.account.refreshSubscription" = "Refresh";
-"auth.account.subscribe" = "Subscribe";
-"auth.account.manageBilling" = "Manage Billing";
-"auth.account.usage" = "Usage Details";
-"auth.account.usagePeriodHint" = "Stats period: %@ to %@.";
-"auth.account.usageCycleUnavailable" = "Stats period is not available yet.";
-"auth.account.usageAudio" = "Audio";
-"auth.account.usageTokens" = "Tokens";
-"auth.account.usageRequests" = "Requests";
-"auth.account.usageTranscripts" = "Transcript Chars";
-"auth.account.usageAnswers" = "Answer Chars";
-"auth.account.refreshUsage" = "Refresh Usage";
-"auth.account.usageQuota" = "Cloud Credits";
-"auth.account.usageFreeQuota" = "Monthly Free Credits";
-"auth.account.usageQuotaRemaining" = "%@ remaining";
-"auth.account.usageQuotaUnlimited" = "Unlimited allowance";
-"auth.account.usageQuotaUsedOfLimit" = "%@ / %@ used (%@)";
-"auth.account.usageQuotaUsedUnlimited" = "%@ used";
-"auth.account.usageQuotaUnavailable" = "Credit allowance is not available yet.";
-"auth.account.usageSeconds" = "%.0f sec";
-"auth.account.usageMinutes" = "%.1f min";
-"auth.account.usageHours" = "%.1f hr";
-"auth.account.usageDays" = "%.1f days";
 
 "agent.clarification.windowTitle" = "Agent Clarification";
 "agent.clarification.assistantSectionTitle" = "Assistant";

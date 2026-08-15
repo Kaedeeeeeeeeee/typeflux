@@ -16,7 +16,7 @@ extension LocalModelManager: BundledSenseVoiceLinking {}
 /// `preparedModelInfo` on startup to expose the local-first fallback route
 /// (see `STTRouter.transcribeWithAutoModelIfReady`), and if the bundled copy
 /// hasn't been recorded yet, the route is skipped — even for users who logged
-/// into Typeflux Cloud and would otherwise hit SenseVoice first.
+/// into another provider and would otherwise hit SenseVoice first.
 ///
 /// Calling `applyIfNeeded()` synchronously at startup makes the bundled model
 /// visible to every downstream consumer before the user can press the hotkey.

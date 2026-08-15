@@ -129,9 +129,11 @@ final class AXTextInjector: TextInjector {
     static let visibleTextContextMaxCharacters = 60000
     static let copyShortcutKeyCode: CGKeyCode = 8
     static let selectionContextLifetime: TimeInterval = 180
+    static let insertionTargetContextLifetime: TimeInterval = 660
     static let focusedDescendantSearchDepth = 10
 
     var latestSelectionContext: SelectionContext?
+    var latestInsertionTargetContext: SelectionContext?
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {
@@ -309,6 +311,17 @@ final class AXTextInjector: TextInjector {
         return target != frontmostProcessID
     }
 
+    static func isCapturedInsertionTargetRestored(
+        targetProcessID: pid_t?,
+        frontmostProcessID: pid_t?,
+        focusedElementMatches: Bool
+    ) -> Bool {
+        guard let targetProcessID, targetProcessID == frontmostProcessID else {
+            return false
+        }
+        return focusedElementMatches
+    }
+
     /// When the stubborn-paste flag is on, route Cmd+V through the HID tap so the
     /// event behaves like a real physical keystroke and survives non-standard
     /// event pipelines (Electron, NSPanel hotkey windows, etc.). Otherwise keep
@@ -356,6 +369,11 @@ final class AXTextInjector: TextInjector {
     ) -> Bool {
         guard replaceSelection, !baselineAvailable else { return false }
         return selectionSource == "clipboard-copy" && focusMatched
+    }
+
+    static func shouldTryClipboardSelectionFallback(selectedRange: CFRange?) -> Bool {
+        guard let selectedRange else { return true }
+        return selectedRange.location < 0 || selectedRange.length != 0
     }
 
     /// Only restore the user's previous pasteboard if no other writer has
@@ -464,6 +482,50 @@ final class AXTextInjector: TextInjector {
         }
     }
 
+    func captureInsertionTarget() {
+        performAXOperationOnMainThread {
+            latestInsertionTargetContext = nil
+
+            guard AXIsProcessTrusted(),
+                  let processID = frontmostProcessID(),
+                  !isTypefluxOwnedTarget(
+                      processID: processID,
+                      bundleIdentifier: frontmostApplicationBundleIdentifier()
+                  ),
+                  let element = focusedElement(for: processID),
+                  isLikelyEditable(element: element)
+            else {
+                NetworkDebugLogger.logMessage(
+                    "[Text Injection] recording-start target capture unavailable"
+                )
+                return
+            }
+
+            let context = SelectionContext(
+                element: element,
+                range: copySelectedTextRange(from: element),
+                processID: processID,
+                processName: frontmostApplicationName(),
+                selectedText: nil,
+                role: copyStringAttribute(kAXRoleAttribute as String, from: element),
+                windowTitle: containingWindowTitle(of: element) ?? focusedWindowTitle(for: processID),
+                isFocusedTarget: true,
+                source: "recording-start",
+                capturedAt: Date()
+            )
+            latestInsertionTargetContext = context
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] captured recording-start target | \(selectionContextSummary(context))"
+            )
+        }
+    }
+
+    func clearInsertionTarget() {
+        performAXOperationOnMainThread {
+            latestInsertionTargetContext = nil
+        }
+    }
+
     func readSelectionSnapshot() -> TextSelectionSnapshot {
         if let target = typefluxNativeTextTarget() {
             NetworkDebugLogger.logMessage(
@@ -540,6 +602,32 @@ final class AXTextInjector: TextInjector {
                 isFocusedTarget: result.context.isFocusedTarget
             )
         }
+
+        if let focused = focusedElement(),
+           let selectedRange = copySelectedTextRange(from: focused),
+           !Self.shouldTryClipboardSelectionFallback(selectedRange: selectedRange) {
+            let role = copyStringAttribute(kAXRoleAttribute as String, from: focused)
+            let editability = isLikelyEditable(element: focused)
+            let isFocusedTarget = copyBooleanAttribute(
+                kAXFocusedAttribute as String,
+                from: focused
+            ) ?? false
+            latestSelectionContext = nil
+            logger.debug("ax-api returned an empty caret range — skipping clipboard-copy")
+            return TextSelectionSnapshot(
+                processID: processID,
+                processName: processName,
+                bundleIdentifier: bundleIdentifier,
+                selectedRange: selectedRange,
+                selectedText: nil,
+                source: "accessibility-caret",
+                isEditable: editability,
+                role: role,
+                windowTitle: containingWindowTitle(of: focused),
+                isFocusedTarget: isFocusedTarget
+            )
+        }
+
         logger.debug("ax-api returned nil — trying clipboard-copy")
 
         if let copiedText = readSelectedTextViaCopy(

@@ -33,7 +33,6 @@ final class WorkflowController {
     static let audioStartupMaxAttemptCount = 3
     static let audioStartupRetryDelay: Duration = .milliseconds(250)
     static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 30
-    static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
     var llmTimeoutAfterTranscription: TimeInterval = WorkflowController.llmTimeoutAfterTranscriptionSeconds
     struct LLMRequestTimeoutError: LocalizedError {
         var errorDescription: String? {
@@ -140,7 +139,6 @@ final class WorkflowController {
     var isHistoryPickerPresented = false
     var historyPickerItems: [HistoryPickerEntry] = []
     var historyPickerSelectedIndex = 0
-    var lastPaidCreditExhaustedPromptPresentedAt: Date?
 
     // Clarification mode: set when the agent workflow is paused waiting for a user voice reply.
     var pendingClarificationContinuation: CheckedContinuation<String, Error>?
@@ -412,6 +410,7 @@ final class WorkflowController {
     func cancelRecording() {
         guard isRecording else { return }
         isRecording = false
+        textInjector.clearInsertionTarget()
         let shouldStopAudioRecorder = isAudioRecorderStarted
         isAudioRecorderStarted = false
         isAudioRecorderStarting = false
@@ -462,7 +461,9 @@ final class WorkflowController {
                     Task { @MainActor [weak self] in
                         guard let self, isRecording else { return }
                         latestRecordingPreviewText = trimmed
-                        overlayController.updateRecordingPreviewText(trimmed)
+                        if WorkflowOverlayPresentationPolicy.shouldShowRecordingTranscriptionPreview() {
+                            overlayController.updateRecordingPreviewText(trimmed)
+                        }
                     }
                 }
             } catch {
@@ -901,9 +902,7 @@ final class WorkflowController {
 
     func recordingHintPresentation(
         intent: RecordingIntent,
-        recordingMode: RecordingMode,
-        appName: String?,
-        bundleIdentifier: String?
+        recordingMode: RecordingMode
     ) -> RecordingHintPresentation {
         if intent == .askSelection {
             return RecordingHintPresentation(text: L("overlay.ask.guidance"), autoHideAfter: nil)
@@ -916,47 +915,13 @@ final class WorkflowController {
             )
         }
 
-        guard let persona = settingsStore.effectivePersona(
-            appName: appName,
-            bundleIdentifier: bundleIdentifier
-        ) else {
-            return RecordingHintPresentation(text: nil, autoHideAfter: nil)
-        }
-
-        return RecordingHintPresentation(
-            text: L("overlay.recording.personaHint", persona.name),
-            autoHideAfter: Self.recordingHintAutoHideDelay
-        )
-    }
-
-    func shouldOptimizeTypefluxASR(
-        intent: RecordingIntent,
-        recordingMode: RecordingMode,
-        appName: String?,
-        bundleIdentifier: String?
-    ) -> Bool {
-        guard intent == .dictation else { return true }
-        if shouldUseQuickInput(recordingMode: recordingMode, recordingIntent: intent) {
-            return true
-        }
-        guard let persona = settingsStore.effectivePersona(
-            appName: appName,
-            bundleIdentifier: bundleIdentifier
-        ) else {
-            return true
-        }
-        return settingsStore.resolvedPersonaPrompt(for: persona)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .isEmpty
+        return RecordingHintPresentation(text: nil, autoHideAfter: nil)
     }
 
     func currentRecordingHintPresentation() -> RecordingHintPresentation {
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
         return recordingHintPresentation(
             intent: recordingIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            recordingMode: recordingMode
         )
     }
 
@@ -970,6 +935,11 @@ final class WorkflowController {
             ? RecordingIntent.askSelection
             : intent
         let effectiveStartLocked = recordingMode == .locked || startLocked
+        if effectiveIntent == .dictation {
+            textInjector.captureInsertionTarget()
+        } else {
+            textInjector.clearInsertionTarget()
+        }
         isRecording = true
         isAudioRecorderStarted = false
         isAudioRecorderStarting = true
@@ -978,18 +948,9 @@ final class WorkflowController {
         recordingIntent = effectiveIntent
         lastRetryableFailureRecord = nil
         latestRecordingPreviewText = ""
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
         let recordingHint = recordingHintPresentation(
             intent: effectiveIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
-        )
-        let optimizeASR = shouldOptimizeTypefluxASR(
-            intent: effectiveIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            recordingMode: recordingMode
         )
         NSLog("[Workflow] Recording started")
 
@@ -1023,15 +984,15 @@ final class WorkflowController {
             }
             let realtimeSession: (any RealtimeTranscriptionSession)? = if canUseRealtimeTranscription {
                 await sttRouter.makeRealtimeTranscriptionSession(
-                    scenario: .voiceInput,
-                    optimize: optimizeASR,
                     onUpdate: { [weak self] snapshot in
                         let trimmed = snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !trimmed.isEmpty else { return }
                         Task { @MainActor [weak self] in
                             guard let self, isRecording else { return }
                             latestRecordingPreviewText = trimmed
-                            overlayController.updateRecordingPreviewText(trimmed)
+                            if WorkflowOverlayPresentationPolicy.shouldShowRecordingTranscriptionPreview() {
+                                overlayController.updateRecordingPreviewText(trimmed)
+                            }
                         }
                     }
                 )
@@ -1142,6 +1103,7 @@ final class WorkflowController {
                 self?.finishRecordingFromCurrentMode()
             }
         } catch {
+            textInjector.clearInsertionTarget()
             Task { await liveTranscriptionPreviewer?.cancel() }
             activeRealtimeAudioBufferPump?.cancel()
             Task { await activeRealtimeTranscriptionSession?.cancel() }
@@ -1253,6 +1215,7 @@ final class WorkflowController {
         let recordingStoppedAt = Date()
 
         guard shouldStopAudioRecorder else {
+            textInjector.clearInsertionTarget()
             selectionTask?.cancel()
             selectionTask = nil
             inputContextTask?.cancel()
@@ -1344,41 +1307,19 @@ final class WorkflowController {
     // MARK: - LLM Configuration Validation
 
     func validateLLMConfiguration() async -> LLMConfigurationStatus {
-        let isLoggedIn = await MainActor.run { AuthState.shared.isLoggedIn }
-        let validator = LLMConfigurationValidator(
-            settingsStore: settingsStore,
-            isLoggedIn: isLoggedIn
-        )
-        return validator.validate()
+        LLMConfigurationValidator(settingsStore: settingsStore).validate()
     }
 
     func presentLLMNotConfigured(_ status: LLMConfigurationStatus) async {
         guard case let .notConfigured(reason) = status else { return }
-        let presentation = LLMConfigurationReminderPolicy(settingsStore: settingsStore)
-            .presentation(for: status)
         await MainActor.run {
             self.shouldPreserveLLMConfigurationNotice = true
-
-            guard presentation == .actionDialog else {
-                self.appState.setStatus(.idle)
-                self.overlayController.showNotice(message: L("workflow.llmNotConfigured.notice.localFallback"))
-                return
-            }
-
             self.soundEffectPlayer.play(.error)
 
             let actions: [OverlayFailureAction] = [
                 OverlayFailureAction(
-                    title: L("workflow.llmNotConfigured.action.loginCloud"),
-                    isRetry: false,
-                    handler: {
-                        LoginWindowController.shared.show()
-                    }
-                ),
-                OverlayFailureAction(
                     title: L("workflow.llmNotConfigured.action.configureCustomModel"),
                     isRetry: false,
-                    style: .secondary,
                     trailingSystemImage: "gearshape",
                     handler: { [weak self] in
                         guard let self else { return }
@@ -1396,85 +1337,6 @@ final class WorkflowController {
                 actions: actions
             )
         }
-    }
-
-    func presentTypefluxCloudLoginRequired() async {
-        await presentLLMNotConfigured(.notConfigured(reason: .cloudNotLoggedIn))
-    }
-
-    func presentCloudBillingError(_ error: TypefluxCloudBillingError) async {
-        await MainActor.run {
-            let hasPaidSubscription = AuthState.shared.subscription.hasPaidSubscription
-            let billingEnabled = AuthState.shared.subscription.billingEnabled
-            guard self.shouldPresentCloudBillingError(
-                error,
-                hasPaidSubscription: hasPaidSubscription
-            ) else {
-                return
-            }
-
-            self.shouldPreserveLLMConfigurationNotice = true
-            self.soundEffectPlayer.play(.tip)
-
-            let actions: [OverlayFailureAction] = [
-                OverlayFailureAction(
-                    title: error.primaryActionTitle(
-                        hasPaidSubscription: hasPaidSubscription,
-                        billingEnabled: billingEnabled
-                    ),
-                    isRetry: false,
-                    trailingSystemImage: "arrow.up.right",
-                    handler: { [weak self] in
-                        guard let self else { return }
-                        SettingsWindowController.shared.show(
-                            settingsStore: settingsStore,
-                            historyStore: historyStore,
-                            initialSection: .account
-                        )
-                    }
-                ),
-                OverlayFailureAction(
-                    title: L("cloud.billing.action.switchModel"),
-                    isRetry: false,
-                    style: .text,
-                    handler: { [weak self] in
-                        guard let self else { return }
-                        SettingsWindowController.shared.show(
-                            settingsStore: settingsStore,
-                            historyStore: historyStore,
-                            initialSection: .models
-                        )
-                    }
-                )
-            ]
-
-            self.overlayController.showFailureWithActions(
-                title: error.title(hasPaidSubscription: hasPaidSubscription, billingEnabled: billingEnabled),
-                message: error.message(hasPaidSubscription: hasPaidSubscription, billingEnabled: billingEnabled),
-                tone: .billing,
-                actions: actions
-            )
-        }
-    }
-
-    @MainActor
-    func shouldPresentCloudBillingError(
-        _ error: TypefluxCloudBillingError,
-        hasPaidSubscription: Bool,
-        now: Date = Date()
-    ) -> Bool {
-        guard error.reason == .quotaExceeded, hasPaidSubscription else {
-            return true
-        }
-
-        if let lastPaidCreditExhaustedPromptPresentedAt,
-           now.timeIntervalSince(lastPaidCreditExhaustedPromptPresentedAt)
-           < Self.paidCreditExhaustedPromptSuppressionInterval {
-            return false
-        }
-
-        lastPaidCreditExhaustedPromptPresentedAt = now
-        return true
     }
 }
 

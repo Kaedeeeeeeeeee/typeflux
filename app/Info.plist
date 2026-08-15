@@ -32,17 +32,5 @@
     <string>Typeflux uses browser automation to read the active web editor context for better text insertion.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Typeflux uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
-
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleURLName</key>
-            <string>ai.gulu.app.typeflux</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>ai.gulu.app.typeflux</string>
-            </array>
-        </dict>
-    </array>
 </dict>
 </plist>

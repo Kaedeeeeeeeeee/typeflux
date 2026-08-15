@@ -4,23 +4,25 @@ import CryptoKit
 import Foundation
 import os
 
-/// Handles the Google OAuth 2.0 + PKCE flow using ASWebAuthenticationSession.
+/// Handles the Google Cloud Speech OAuth 2.0 + PKCE flow using ASWebAuthenticationSession.
 ///
 /// Flow:
 /// 1. Opens Google's OAuth authorization page in a secure browser session.
 /// 2. User signs in and grants consent.
 /// 3. Google redirects back with an authorization code.
 /// 4. The code is exchanged for tokens at Google's token endpoint.
-/// 5. The resulting ID token is returned for verification by the Typeflux backend.
+/// 5. The resulting access and refresh tokens are stored for direct Google Cloud Speech access.
 ///
 /// Configuration:
-/// - Set `GOOGLE_OAUTH_CLIENT_ID` for Google Sign-In.
 /// - Set `GOOGLE_CLOUD_OAUTH_CLIENT_ID` for Google Cloud Speech authorization.
 /// - No redirect URI registration is needed for installed-app clients — Google accepts
 ///   the reverse-client-ID scheme redirect used here.
 @MainActor
-struct GoogleOAuthService {
-    private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "GoogleOAuthService")
+struct GoogleCloudSpeechOAuthAuthorizer {
+    private static let logger = Logger(
+        subsystem: "ai.gulu.app.typeflux",
+        category: "GoogleCloudSpeechOAuthAuthorizer"
+    )
     private struct AuthorizationRequest {
         let url: URL
         let callbackScheme: String
@@ -31,7 +33,6 @@ struct GoogleOAuthService {
     private struct TokenExchangeResponse: Decodable {
         let accessToken: String?
         let expiresIn: Int?
-        let idToken: String?
         let refreshToken: String?
         let error: String?
         let errorDescription: String?
@@ -39,43 +40,10 @@ struct GoogleOAuthService {
         enum CodingKeys: String, CodingKey {
             case accessToken = "access_token"
             case expiresIn = "expires_in"
-            case idToken = "id_token"
             case refreshToken = "refresh_token"
             case error
             case errorDescription = "error_description"
         }
-    }
-
-    /// Initiates the Google sign-in flow and returns a Google ID token on success.
-    ///
-    /// - Parameters:
-    ///   - clientID: Google OAuth 2.0 Client ID. Use an **iOS-type** client for best results
-    ///     (no secret required). Desktop-type clients require `clientSecret`.
-    ///   - clientSecret: Required only for Desktop-type OAuth clients. Leave nil for iOS-type clients.
-    static func signIn(clientID: String, clientSecret: String? = nil) async throws -> String {
-        let authorization = makeAuthorizationRequest(
-            clientID: clientID,
-            scopes: ["openid", "email", "profile"]
-        )
-
-        logger.debug("[Google OAuth] auth URL: \(authorization.url.absoluteString, privacy: .public)")
-        let code = try await openAuthSession(
-            url: authorization.url,
-            scheme: authorization.callbackScheme,
-            expectedState: authorization.state
-        )
-        logger.debug("[Google OAuth] received code (first 12 chars): \(String(code.prefix(12)), privacy: .public)...")
-        let response = try await exchangeAuthorizationCode(
-            code: code,
-            codeVerifier: authorization.codeVerifier,
-            clientID: clientID,
-            clientSecret: clientSecret,
-            redirectURI: "\(authorization.callbackScheme):/"
-        )
-        guard let idToken = response.idToken else {
-            throw GoogleAuthError.missingIDToken
-        }
-        return idToken
     }
 
     static func authorizeGoogleCloud(
@@ -105,7 +73,7 @@ struct GoogleOAuthService {
         guard let accessToken = response.accessToken,
               let expiresIn = response.expiresIn
         else {
-            throw GoogleAuthError.missingAccessToken
+            throw GoogleCloudSpeechOAuthError.missingAccessToken
         }
 
         return GoogleCloudSpeechOAuthToken(
@@ -133,7 +101,7 @@ struct GoogleOAuthService {
         guard let accessToken = response.accessToken,
               let expiresIn = response.expiresIn
         else {
-            throw GoogleAuthError.missingAccessToken
+            throw GoogleCloudSpeechOAuthError.missingAccessToken
         }
 
         return GoogleCloudSpeechOAuthToken(
@@ -221,13 +189,13 @@ struct GoogleOAuthService {
                     let code = components.queryItems?.first(where: { $0.name == "code" })?.value,
                     components.queryItems?.first(where: { $0.name == "state" })?.value == expectedState
                 else {
-                    continuation.resume(throwing: GoogleAuthError.invalidCallback)
+                    continuation.resume(throwing: GoogleCloudSpeechOAuthError.invalidCallback)
                     return
                 }
                 continuation.resume(returning: code)
             }
             session.prefersEphemeralWebBrowserSession = false
-            session.presentationContextProvider = AuthSessionContextProvider.shared
+            session.presentationContextProvider = GoogleCloudSpeechOAuthContextProvider.shared
             session.start()
         }
     }
@@ -297,7 +265,7 @@ struct GoogleOAuthService {
 
         let response = try JSONDecoder().decode(TokenExchangeResponse.self, from: data)
         if let error = response.error {
-            throw GoogleAuthError.tokenExchangeFailed(response.errorDescription ?? error)
+            throw GoogleCloudSpeechOAuthError.tokenExchangeFailed(response.errorDescription ?? error)
         }
         return response
     }
@@ -332,9 +300,8 @@ struct GoogleOAuthService {
 
 // MARK: - Errors
 
-enum GoogleAuthError: LocalizedError {
+enum GoogleCloudSpeechOAuthError: LocalizedError {
     case invalidCallback
-    case missingIDToken
     case missingAccessToken
     case tokenExchangeFailed(String)
 
@@ -342,8 +309,6 @@ enum GoogleAuthError: LocalizedError {
         switch self {
         case .invalidCallback:
             "Google sign-in was cancelled or returned an invalid response."
-        case .missingIDToken:
-            "Failed to retrieve Google ID token."
         case .missingAccessToken:
             "Failed to retrieve Google access token."
         case let .tokenExchangeFailed(reason):
@@ -354,8 +319,9 @@ enum GoogleAuthError: LocalizedError {
 
 // MARK: - Presentation Context
 
-private final class AuthSessionContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
-    static let shared = AuthSessionContextProvider()
+private final class GoogleCloudSpeechOAuthContextProvider: NSObject,
+    ASWebAuthenticationPresentationContextProviding {
+    static let shared = GoogleCloudSpeechOAuthContextProvider()
 
     func presentationAnchor(for _: ASWebAuthenticationSession) -> ASPresentationAnchor {
         NSApp.keyWindow ?? NSApp.windows.first ?? ASPresentationAnchor()

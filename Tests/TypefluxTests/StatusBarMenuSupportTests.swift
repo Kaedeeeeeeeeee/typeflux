@@ -82,10 +82,14 @@ final class StatusBarMenuSupportTests: XCTestCase {
             try XCTUnwrap(titles.firstIndex(of: L("menu.appearance"))),
             try XCTUnwrap(titles.firstIndex(of: L("menu.settings")))
         )
-        XCTAssertLessThan(
-            try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),
-            try XCTUnwrap(titles.firstIndex(of: L("menu.checkForUpdates")))
-        )
+        if AutoUpdateAvailability.isEnabled {
+            XCTAssertLessThan(
+                try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),
+                try XCTUnwrap(titles.firstIndex(of: L("menu.checkForUpdates")))
+            )
+        } else {
+            XCTAssertFalse(titles.contains(L("menu.checkForUpdates")))
+        }
     }
 
     func testRecentTranscriptionRecordsFiltersEmptyFinalTextAndLimitsResults() {

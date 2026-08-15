@@ -78,25 +78,6 @@
 "studio.search.settings" = "検索設定...";
 
 "settings.general" = "一般";
-"settings.servers.title" = "サーバー";
-"settings.servers.api.title" = "API サーバー";
-"settings.servers.api.subtitle" = "アカウント、クラウド AI、アプリのリクエストに使用するサーバーです。";
-"settings.servers.asr.title" = "音声認識サーバー";
-"settings.servers.asr.subtitle" = "Typeflux の音声認識に使用するサーバーです。";
-"settings.servers.automatic" = "自動（最速のサーバー）";
-"settings.servers.speedTest.title" = "サーバー速度テスト";
-"settings.servers.speedTest.subtitle" = "利用可能なすべてのアドレスをテストし、上のメニューに遅延を表示します。";
-"settings.servers.speedTest.action" = "速度をテスト";
-"settings.servers.speedTest.testing" = "テスト中";
-"settings.servers.speedTest.summary" = "テスト完了：API %d/%d 利用可能、音声認識 %d/%d 利用可能。";
-"settings.servers.option.notTested" = "%@ · 未テスト";
-"settings.servers.option.unavailable" = "%@ · 利用不可";
-"settings.servers.option.latency" = "%@ · %d ms";
-"settings.servers.tag.fast" = "高速 · %d ms";
-"settings.servers.tag.average" = "普通 · %d ms";
-"settings.servers.tag.slow" = "低速 · %d ms";
-"settings.servers.tag.unavailable" = "利用不可";
-"settings.servers.tag.notTested" = "未テスト";
 "settings.launchAtLogin.title" = "ログイン時に起動";
 "settings.launchAtLogin.subtitle" = "Mac にサインインした後、Typeflux が自動的に起動します。";
 "settings.activationHotkey" = "音声ショートカット";
@@ -269,13 +250,12 @@
 "provider.stt.googleCloud" = "Google Speech-to-Text";
 "provider.stt.groq" = "Groq";
 "provider.stt.soniox" = "Soniox";
-"provider.stt.typefluxOfficial" = "Typeflux Cloud";
+"provider.stt.deepgram" = "Deepgram";
 "provider.llm.openAICompatible" = "OpenAI-Compatible";
 "provider.llm.custom" = "カスタム";
 "provider.llm.freeModel" = "無料モデル";
 "provider.llm.openRouter" = "OpenRouter";
 "provider.llm.ollama" = "Local Ollama";
-"provider.llm.typefluxCloud" = "Typeflux Cloud";
 
 "downloadSource.modelScope" = "ModelScope";
 "downloadSource.huggingFace" = "Hugging Face";
@@ -323,7 +303,6 @@
 
 "overlay.recording.listening" = "リスニング";
 "overlay.recording.quickInputHint" = "クイック入力モード";
-"overlay.recording.personaHint" = "このリクエストは%@ペルソナで処理されます";
 "overlay.ask.guidance" = "選択したテキストについて何でも質問してください";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";
@@ -377,15 +356,11 @@
 "workflow.ask.selectionRequired" = "「何でも質問」では、最初にテキストを選択する必要があります。";
 "workflow.retry.audioMissing" = "再試行に失敗しました: 音声ファイルがありません。";
 "workflow.retry.audioGone" = "再試行に失敗しました: 音声ファイルはもう存在しません。";
-"workflow.typefluxCloud.loginRequired" = "Typeflux Cloud にサインインして、クラウド機能をご利用ください。";
-"workflow.llmNotConfigured.missingAPIKey" = "LLM API キーが設定されていません。設定画面で設定するか、Typeflux Cloud をご利用ください。";
-"workflow.llmNotConfigured.cloudNotLoggedIn" = "Typeflux Cloud にサインインして、クラウド言語モデルをご利用ください。";
+"workflow.llmNotConfigured.missingAPIKey" = "LLM API キーが設定されていません。設定画面で設定してください。";
 "workflow.llmNotConfigured.incomplete" = "LLM の設定が不完全です。設定を確認してください。";
 "workflow.llmNotConfigured.action.settings" = "設定を開く";
-"workflow.llmNotConfigured.action.loginCloud" = "Typeflux Cloud にログイン";
 "workflow.llmNotConfigured.action.configureCustomModel" = "カスタムモデルを設定";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud にログインしていません。今回の入力を止めないよう、ローカル音声認識を使用しました。ログインするとクラウド書き換えを利用できます。";
-"workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud にログインしていません。音声の文字起こしは保存しましたが、クラウド Q&A は実行できませんでした。";
+"workflow.llmNotConfigured.askSkipped" = "音声の文字起こしは保存しましたが、言語モデルが設定されていないため Q&A を実行できませんでした。";
 
 "persona.none.title" = "ペルソナなし";
 "persona.none.subtitle" = "ペルソナのスタイリングなしでディクテーションを行います。";
@@ -506,6 +481,7 @@
 "history.clearDialog.message" = "すべての履歴と関連する音声ファイルが完全に削除されます。この操作は元に戻せません。";
 "history.toast.retryStarted" = "再試行が開始されました。";
 "history.toast.transcriptCopied" = "トランスクリプトをコピーしました。";
+"history.toast.copyFailed" = "トランスクリプトをコピーできませんでした。";
 "history.toast.audioUnavailable" = "音声ファイルが利用できません。";
 "history.toast.audioDownloaded" = "音声がダウンロードされました。";
 "history.toast.audioDownloadFailed" = "音声のダウンロードに失敗しました。";
@@ -715,11 +691,9 @@
 "settings.models.useDoubao" = "豆包を使用する";
 "settings.models.useGroq" = "Groq を使用する";
 "settings.models.useSoniox" = "Use Soniox";
-"settings.models.useTypefluxOfficial" = "Typeflux 公式を使用する";
-"settings.models.useTypefluxCloud" = "Typeflux Cloud を使用する";
+"settings.models.useDeepgram" = "Deepgram を使用";
 "settings.models.badge.local" = "ローカル";
 "settings.models.badge.api" = "API";
-"settings.models.badge.official" = "公式";
 "settings.models.modelNotConfigured" = "モデルが設定されていません";
 "settings.models.builtInDefaultModel" = "内蔵デフォルトモデル";
 "settings.models.builtInDefaultProfile" = "組み込みのデフォルトプロファイル";
@@ -732,8 +706,9 @@
 "settings.models.card.googleCloud.summary" = "Google Cloud Speech-to-Text によるリアルタイムのストリーミング音声認識。";
 "settings.models.card.groq.summary" = "Groq の推論エンドポイントによる高速な Whisper 文字起こし。既定モデルは whisper-large-v3-turbo。";
 "settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages.";
-"settings.models.card.typefluxOfficial.summary" = "Typeflux 内蔵の音声認識サービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
-"settings.models.card.typefluxCloud.summary" = "Typeflux 内蔵の大規模言語モデルサービスです。Typeflux アカウントでサインインするだけで使用できます。追加の API キーは不要です。";
+"settings.models.card.deepgram.summary" = "Deepgram Nova-3 による高精度な多言語クラウド文字起こしと自動スマートフォーマット。";
+"settings.models.deepgram.language" = "音声言語";
+"settings.models.deepgram.languageHint" = "自動モードは録音ごとに1つの主要言語を検出します。Deepgram は現在、中国語・日本語・英語のコードスイッチングを1つのモデルで認識できません。";
 "settings.models.card.ollama.summary" = "オプションの自動モデル準備を使用して、ローカルで書き換えおよび編集コマンドを実行します。";
 "settings.models.card.openAICompatible.summary" = "リモート チャット補完プロバイダーに接続して、ペルソナの書き換えとワークフローの編集を行います。";
 "settings.models.card.custom.summary" = "独自のベース URL、モデル、および API キーを使用して、互換性のあるエンドポイントを手動で構成します。";
@@ -788,8 +763,7 @@
 "settings.models.overview.googleCloud" = "音声認識は Google Cloud Speech-to-Text に直接リアルタイムでストリーミングされます。";
 "settings.models.overview.groq" = "音声認識は、Groq の高速推論エンドポイントが Whisper モデルを使用して処理します。";
 "settings.models.overview.soniox" = "Speech recognition is streamed in real time to Soniox V5 via WebSocket.";
-"settings.models.overview.typefluxOfficial" = "音声認識は Typeflux の内蔵サービスで処理されます。";
-"settings.models.overview.typefluxCloud" = "テキストの書き直しと編集は Typeflux の内蔵 LLM サービスで処理されます。";
+"settings.models.overview.deepgram" = "録音を Deepgram Nova-3 に送信し、多言語音声認識とスマートフォーマットを行います。";
 "settings.models.mode.local" = "ローカル";
 "settings.models.mode.remote" = "リモート";
 "settings.models.fallback.enabled" = "フォールバックが有効になっている";
@@ -810,8 +784,7 @@
 "settings.models.focused.googleCloud" = "Google Cloud Speech-to-Text のリアルタイム ストリーミング認識が必要な場合にこれを使用します。";
 "settings.models.focused.groq" = "Groq の高速推論を使用した迅速なクラウド文字起こしが必要な場合にこれを使用します。";
 "settings.models.focused.soniox" = "Use this for accurate real-time cloud transcription via Soniox V5 across 60+ languages.";
-"settings.models.focused.typefluxOfficial" = "Typeflux 内蔵の音声認識サービスを使用します。サインインするだけで、追加の設定は不要です。";
-"settings.models.focused.typefluxCloud" = "Typeflux 内蔵の LLM サービスを使用してテキストの書き直しと編集を行います。サインインするだけで、追加の設定は不要です。";
+"settings.models.focused.deepgram" = "Deepgram Nova-3 で高精度な多言語クラウド文字起こしを行う場合に使用します。";
 "settings.models.routing" = "ルーティング動作";
 "settings.models.routing.primaryRecognizer" = "一次認識装置";
 "settings.models.routing.primaryRuntime" = "プライマリ ランタイム";
@@ -827,6 +800,7 @@
 "settings.models.routing.googleCloud" = "Google Cloud Speech-to-Text はこの Mac から直接リアルタイム ストリーミング ASR を処理します。";
 "settings.models.routing.groq" = "Groq は、Whisper 互換の文字起こしエンドポイントを使用した高速推論でディクテーションを処理します。";
 "settings.models.routing.soniox" = "Soniox V5 handles real-time streaming ASR via WebSocket with high accuracy across 60+ languages.";
+"settings.models.routing.deepgram" = "Deepgram Nova-3 は Listen API を通じて録音を処理し、多言語認識を行います。";
 "settings.models.googleCloud.streaming" = "StreamingRecognize";
 "settings.models.googleCloud.projectID" = "Project ID";
 "settings.models.googleCloud.oauth.authorize" = "Google を認可";
@@ -836,12 +810,6 @@
 "settings.models.googleCloud.oauth.disconnected" = "Google 認可を切断しました。";
 "settings.models.googleCloud.cloudGatewayHint" = "Project ID と API Key を使って Google Cloud Speech-to-Text v2 StreamingRecognize を直接呼び出します。";
 "settings.models.useGoogleCloud" = "Google を使用";
-"settings.models.routing.typefluxOfficial" = "Typeflux 公式は内蔵の音声認識サービスでディクテーションを処理します。";
-"settings.models.routing.typefluxCloud" = "Typeflux Cloud は内蔵の LLM サービスで書き直しと編集のリクエストを処理します。";
-"settings.models.typefluxOfficial.description" = "Typeflux 公式は内蔵の音声認識サービスです。API キーやエンドポイントの設定は不要です。Typeflux アカウントでサインインするだけでディクテーションを始められます。";
-"settings.models.typefluxOfficial.loginRequired" = "このサービスを使用するには、Typeflux アカウントでサインインしてください。";
-"settings.models.typefluxCloud.loginRequired" = "このサービスを使用するには、Typeflux アカウントでサインインしてください。";
-"settings.models.typefluxOfficial.signIn" = "サインイン";
 "settings.models.routing.fallback" = "フォールバック";
 "settings.models.routing.localSetup" = "ローカルセットアップ";
 "settings.models.routing.readiness" = "準備完了";
@@ -873,14 +841,6 @@
 "workflow.localModelDownloadingAlert.failedTitle" = "ローカル音声モデルのダウンロードに失敗しました";
 "workflow.localModelDownloadingAlert.failedMessage" = "ダウンロードに失敗しました：%@。ネットワークが利用できる状態で、もう一度ショートカットを押すと再試行できます。";
 "workflow.localModelDownloadingAlert.failedProgress" = "ダウンロードに失敗しました";
-"cloud.autoSwitch.title" = "Typeflux Cloud が有効になりました";
-"cloud.autoSwitch.body" = "音声認識と AI モデルが Typeflux Cloud に切り替わりました。「設定」からいつでも自分のモデルに戻せます。";
-"cloud.subscriptionSwitch.title" = "Typeflux Cloud モデルを使用しますか?";
-"cloud.subscriptionSwitch.body" = "サブスクリプションが有効になりました。Typeflux Cloud は音声認識と AI リライトの両方で、よりスムーズな既定体験を提供できます。";
-"cloud.subscriptionSwitch.confirm" = "Typeflux Cloud を使用";
-"cloud.subscriptionSwitch.keepCurrent" = "現在のモデルを維持";
-"cloud.subscriptionSwitch.successTitle" = "設定が完了しました";
-"cloud.subscriptionSwitch.successBody" = "音声モデルと大規模言語モデルが Typeflux Cloud に切り替わりました。";
 "settings.models.redownload" = "再ダウンロード";
 "settings.models.deleteModelFiles" = "モデルファイルの削除";
 "settings.models.redownloadDialog.title" = "%@ を再ダウンロードしますか?";
@@ -910,9 +870,6 @@
 
 "onboarding.language.title" = "言語を選択してください";
 "onboarding.language.subtitle" = "Typeflux インターフェイスの表示言語を選択します。";
-"onboarding.account.title" = "お帰りなさい";
-"onboarding.account.subtitle" = "クラウド音声認識と AI 推論機能を解放する";
-"onboarding.account.cloudReady" = "音声認識と大規模言語モデルサービスが利用可能です。追加の API キーは不要です。";
 
 "onboarding.models.title" = "モデルをセットアップする";
 "onboarding.models.subtitle" = "音声認識エンジンと言語モデルを選択します。これらは [設定] でいつでも変更できます。";
@@ -984,7 +941,6 @@
 "onboarding.action.back" = "前へ";
 "onboarding.action.continue" = "次へ";
 "onboarding.action.skip" = "スキップ";
-"onboarding.account.skip" = "スキップして自分のモデルを設定";
 "onboarding.action.getStarted" = "始めましょう";
 
 // MARK: - Agent Framework
@@ -1073,149 +1029,14 @@
 "agent.jobs.deleteDialog.title" = "ジョブの削除";
 "agent.jobs.deleteDialog.message" = "「%@」を削除しますか?この操作は元に戻すことができません。";
 
-// MARK: - Auth & Account
 
-"sidebar.accountAccessibility" = "アカウント";
 
-"studio.section.account" = "アカウント";
-"studio.eyebrow.account" = "アカウント";
-"studio.heading.account" = "アカウント";
-"studio.search.account" = "アカウントを検索...";
 
-"auth.login.windowTitle" = "サインイン";
-"auth.login.title" = "ようこそ";
-"auth.login.enterEmailSubtitle" = "メールアドレスを入力してください";
-"auth.login.loginSubtitle" = "アカウントにサインイン";
-"auth.login.registerSubtitle" = "新しいアカウントを作成";
-"auth.login.activateSubtitle" = "メールに届いたアクティベーションコードを確認してください";
-"auth.login.continue" = "次へ";
-"auth.login.signIn" = "サインイン";
-"auth.login.createAccount" = "アカウント作成";
-"auth.login.activate" = "アクティベート";
-"auth.login.forgotPassword" = "パスワードをお忘れですか";
-"auth.login.sendResetCode" = "リセットコードを送信";
-"auth.login.resetPassword" = "パスワードをリセット";
-"auth.login.alreadyHaveResetCode" = "すでにリセットコードを持っています";
-"auth.login.resendActivation" = "コードが届きませんか？ 再送する";
-"auth.login.resendActivationCountdown" = "%d 秒後に再送できます";
-"auth.login.forgotPasswordHint" = "%@ にリセットコードを送信します。";
-"auth.login.activationCodeSent" = "アクティベーションコードを送信しました。メールを確認してください。";
-"auth.login.activationCodeResent" = "新しいアクティベーションコードを送信しました。";
-"auth.login.resetCodeSent" = "パスワードリセットコードを送信しました。メールを確認してください。";
-"auth.login.back" = "戻る";
-"auth.login.continueWithGoogle" = "Google でログイン";
-"auth.login.continueWithGitHub" = "GitHub でログイン";
-"auth.login.continueWithApple" = "Apple でログイン";
-"auth.login.orDivider" = "または";
-"auth.login.activateHint" = "%@ にアクティベーションコードを送信しました。下に入力してください。";
 
-"auth.field.email" = "メールアドレス";
-"auth.field.password" = "パスワード";
-"auth.field.confirmPassword" = "パスワード確認";
-"auth.field.name" = "名前（任意）";
-"auth.field.activationCode" = "アクティベーションコード";
-"auth.field.resetCode" = "リセットコード";
-"auth.field.newPassword" = "新しいパスワード";
-"auth.field.confirmNewPassword" = "新しいパスワードを確認";
-
-"auth.error.emailRequired" = "メールアドレスを入力してください。";
-"auth.error.passwordRequired" = "パスワードを入力してください。";
-"auth.error.currentPasswordRequired" = "現在のパスワードを入力してください。";
-"auth.error.passwordMismatch" = "パスワードが一致しません。";
-"auth.error.passwordTooShort" = "パスワードは8文字以上必要です。";
-"auth.error.passwordTooWeak" = "パスワードには大文字・小文字・数字を含めてください。";
-"auth.error.codeRequired" = "アクティベーションコードを入力してください。";
-"auth.error.resetCodeRequired" = "リセットコードを入力してください。";
-"auth.error.policyAgreementRequired" = "先に利用規約とプライバシーポリシーに同意してください。";
-"auth.error.unknown" = "不明なエラーが発生しました。";
-"auth.error.invalidResponse" = "サーバーの応答が無効です。";
-"auth.error.unauthorized" = "セッションが期限切れです。再度サインインしてください。";
-"cloud.error.authInvalidCredentials" = "メールアドレスまたはパスワードが正しくありません。";
-"cloud.error.authUserExists" = "このメールアドレスのアカウントはすでに存在します。";
-"cloud.error.authUserNotActive" = "サインインする前にアカウントを有効化してください。";
-"cloud.error.authCodeInvalid" = "確認コードが無効または期限切れです。";
-"cloud.error.sessionExpired" = "セッションが期限切れです。再度サインインしてください。";
 "cloud.error.validation" = "リクエストが無効です。入力内容を確認してもう一度お試しください。";
 "cloud.error.rateLimited" = "リクエストが多すぎます。しばらく待ってからもう一度お試しください。";
-"cloud.error.quotaExceeded" = "Typeflux Cloud の利用枠を使い切りました。";
-"cloud.error.planRequired" = "現在のプランではこの Typeflux Cloud 機能を利用できません。アカウント画面で購読または請求管理を行ってください。";
-"cloud.error.server" = "Typeflux Cloud は一時的に利用できません。後でもう一度お試しください。";
-"cloud.billing.subscriptionRequired.title" = "Typeflux Cloud の購読が必要です";
-"cloud.billing.subscriptionRequired.body" = "このクラウド機能は現在のプランに含まれていません。購読すると Typeflux Cloud を引き続き利用できます。";
-"cloud.billing.quotaExceeded.title" = "Typeflux Cloud の利用枠が不足しています";
-"cloud.billing.quotaExceeded.body" = "クラウドの利用枠またはクレジットが現在利用できません。アカウント画面で購読または請求を確認してください。";
-"cloud.billing.freeQuotaExceeded.title" = "無料のクラウドクレジットを使い切りました";
-"cloud.billing.freeQuotaExceeded.body" = "この期間の無料クラウドクレジットを使い切りました。アカウントで使用量を確認するか、別のモデルに切り替えてください。";
-"cloud.billing.action.openAccount" = "アカウントを開く";
-"cloud.billing.action.subscribe" = "購読する";
-"cloud.billing.action.switchModel" = "別のモデルに切り替え";
+"cloud.error.server" = "サーバーは一時的に利用できません。後でもう一度お試しください。";
 
-"auth.account.provider" = "ログイン方法";
-"auth.account.memberSince" = "登録日";
-"auth.account.logout" = "サインアウト";
-"auth.account.providerEmail" = "メールとパスワード";
-"auth.account.signIn" = "サインイン";
-"auth.account.passwordSection" = "パスワード管理";
-"auth.account.currentPassword" = "現在のパスワード";
-"auth.account.newPassword" = "新しいパスワード";
-"auth.account.confirmNewPassword" = "新しいパスワードを確認";
-"auth.account.changePassword" = "パスワードを変更";
-"auth.account.changePasswordDialogTitle" = "パスワードを変更";
-"auth.account.changePasswordDialogSubtitle" = "ダイアログでパスワードを更新します。変更後、この端末では再ログインが必要になります。";
-"auth.account.passwordHint" = "パスワードを変更すると、この端末では再ログインが必要になります。";
-"auth.account.passwordChangeSuccessTitle" = "変更完了";
-"auth.account.passwordChanged" = "パスワードを更新しました。再度サインインしてください。";
-"auth.account.relogin" = "再度サインイン";
-"auth.account.signedOutTitle" = "未サインイン";
-"auth.account.signedOutSubtitle" = "サインインすると、アカウント情報の確認と現在のセッション管理ができます。";
-"auth.account.subscription" = "サブスクリプション";
-"auth.account.subscriptionPlan" = "プラン";
-"auth.account.subscriptionStatus" = "ステータス";
-"auth.account.subscriptionPeriod" = "請求期間";
-"auth.account.subscriptionBillingCycle" = "請求サイクル";
-"auth.account.subscriptionActiveHint" = "Typeflux Cloud のサブスクリプションは有効です。";
-"auth.account.subscriptionFreeHint" = "Free プランが有効です。Typeflux Cloud の無料利用枠を利用できます。";
-"auth.account.subscriptionInactiveHint" = "現在のサブスクリプションでは Typeflux Cloud 機能を利用できません。";
-"auth.account.subscriptionRequiredHint" = "購読すると Typeflux Cloud の音声認識とモデル推論を利用できます。";
-"auth.account.subscriptionNoPlan" = "未購読";
-"auth.account.subscriptionFreePlan" = "Free";
-"auth.account.subscriptionDefaultPlan" = "Pro";
-"auth.account.subscriptionStatusNone" = "未購読";
-"auth.account.subscriptionStatusFree" = "Free";
-"auth.account.subscriptionStatusAvailable" = "利用可能";
-"auth.account.subscriptionStatusActive" = "有効";
-"auth.account.subscriptionStatusTrialing" = "トライアル";
-"auth.account.subscriptionStatusPastDue" = "支払い遅延";
-"auth.account.subscriptionStatusCanceled" = "キャンセル済み";
-"auth.account.subscriptionStatusUnpaid" = "未払い";
-"auth.account.subscriptionPeriodUnavailable" = "利用不可";
-"auth.account.subscriptionEndsOn" = "%@ に終了";
-"auth.account.subscriptionRenewsOn" = "%@ に更新";
-"auth.account.subscriptionPeriodRange" = "%@ から %@";
-"auth.account.subscriptionPeriodUntil" = "%@ まで";
-"auth.account.refreshSubscription" = "更新";
-"auth.account.subscribe" = "購読";
-"auth.account.manageBilling" = "請求管理";
-"auth.account.usage" = "使用明細";
-"auth.account.usagePeriodHint" = "統計期間: %@ から %@。";
-"auth.account.usageCycleUnavailable" = "統計期間はまだ利用できません。";
-"auth.account.usageAudio" = "音声";
-"auth.account.usageTokens" = "トークン";
-"auth.account.usageRequests" = "リクエスト";
-"auth.account.usageTranscripts" = "文字起こし文字数";
-"auth.account.usageAnswers" = "回答文字数";
-"auth.account.refreshUsage" = "使用量を更新";
-"auth.account.usageQuota" = "クラウドクレジット";
-"auth.account.usageFreeQuota" = "毎月の無料クレジット";
-"auth.account.usageQuotaRemaining" = "残り %@";
-"auth.account.usageQuotaUnlimited" = "無制限";
-"auth.account.usageQuotaUsedOfLimit" = "%@ / %@ 使用済み（%@）";
-"auth.account.usageQuotaUsedUnlimited" = "%@ 使用済み";
-"auth.account.usageQuotaUnavailable" = "クレジット枠はまだ利用できません。";
-"auth.account.usageSeconds" = "%.0f 秒";
-"auth.account.usageMinutes" = "%.1f 分";
-"auth.account.usageHours" = "%.1f 時間";
-"auth.account.usageDays" = "%.1f 日";
 
 "agent.clarification.windowTitle" = "アシスタントの確認";
 "agent.clarification.assistantSectionTitle" = "アシスタント";

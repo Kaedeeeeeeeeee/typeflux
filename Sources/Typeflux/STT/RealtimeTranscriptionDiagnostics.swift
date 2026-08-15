@@ -227,20 +227,16 @@ final class RealtimeTranscriptionDiagnostics: @unchecked Sendable {
 }
 
 actor ObservedRealtimeTranscriptionSession: RealtimeTranscriptionSession,
-    RealtimeDiagnosticsProviding,
-    RealtimeASROptimizeProviding {
+    RealtimeDiagnosticsProviding {
     private let upstream: any RealtimeTranscriptionSession
     private let diagnostics: RealtimeTranscriptionDiagnostics
-    nonisolated let asrOptimize: Bool?
 
     init(
         upstream: any RealtimeTranscriptionSession,
-        diagnostics: RealtimeTranscriptionDiagnostics,
-        asrOptimize: Bool?
+        diagnostics: RealtimeTranscriptionDiagnostics
     ) {
         self.upstream = upstream
         self.diagnostics = diagnostics
-        self.asrOptimize = asrOptimize
     }
 
     func start() async {

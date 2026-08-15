@@ -20,13 +20,13 @@ final class FeedbackAPIServiceTests: XCTestCase {
         XCTAssertNil(dict?["imageURLs"])
     }
 
-    func testSubmitPostsFeedbackToCloudEndpoint() async throws {
+    func testSubmitPostsAnonymousFeedbackToEndpoint() async throws {
         let session = FeedbackStubSession()
         await session.setHandler { request in
             XCTAssertEqual(request.url?.absoluteString, "https://api.example/api/v1/feedback")
             XCTAssertEqual(request.httpMethod, "POST")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
 
             let body = try XCTUnwrap(request.httpBody)
             let dict = try JSONSerialization.jsonObject(with: body) as? [String: Any]
@@ -43,7 +43,6 @@ final class FeedbackAPIServiceTests: XCTestCase {
             content: "  Please fix this  ",
             contact: " user@example.com ",
             imageURLs: ["https://cdn.example/image.jpg"],
-            token: "token-1",
             executor: executor
         )
 
@@ -68,7 +67,6 @@ final class FeedbackAPIServiceTests: XCTestCase {
         let response = try await FeedbackAPIService.submit(
             content: "Anonymous report",
             contact: "   ",
-            token: nil,
             executor: executor
         )
 
@@ -81,7 +79,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
             XCTAssertEqual(request.url?.absoluteString, "https://api.example/api/v1/feedback/uploads/presign")
             XCTAssertEqual(request.httpMethod, "POST")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
 
             let body = try XCTUnwrap(request.httpBody)
             let dict = try JSONSerialization.jsonObject(with: body) as? [String: Any]
@@ -102,7 +100,6 @@ final class FeedbackAPIServiceTests: XCTestCase {
             filename: "screen.jpg",
             contentType: "image/jpeg",
             sizeBytes: 123,
-            token: "token-1",
             executor: executor
         )
 
@@ -127,7 +124,6 @@ final class FeedbackAPIServiceTests: XCTestCase {
             filename: "screen.jpg",
             contentType: "image/jpeg",
             sizeBytes: 123,
-            token: "token-1",
             executor: executor
         )
 
@@ -149,7 +145,6 @@ final class FeedbackAPIServiceTests: XCTestCase {
                 filename: "screen.jpg",
                 contentType: "image/jpeg",
                 sizeBytes: 123,
-                token: "token-1",
                 executor: executor
             )
             XCTFail("Expected server error")

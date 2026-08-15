@@ -249,7 +249,6 @@ struct OverlayFailureAction {
 
 enum OverlayFailureTone {
     case error
-    case billing
 }
 
 final class OverlayController {
@@ -1725,21 +1724,11 @@ private struct OverlayView: View {
     }
 
     private var failureIcon: String {
-        switch model.failureTone {
-        case .error:
-            "exclamationmark.circle"
-        case .billing:
-            "creditcard.circle"
-        }
+        "exclamationmark.circle"
     }
 
     private var failureAccent: Color {
-        switch model.failureTone {
-        case .error:
-            Color(red: 1.0, green: 0.56, blue: 0.28)
-        case .billing:
-            Color(red: 0.34, green: 0.70, blue: 1.0)
-        }
+        Color(red: 1.0, green: 0.56, blue: 0.28)
     }
 
     @ViewBuilder
@@ -1747,7 +1736,7 @@ private struct OverlayView: View {
         switch style {
         case .primary:
             RoundedRectangle(cornerRadius: 8).fill(
-                failureAccent.opacity(model.failureTone == .billing ? 0.62 : 0.48)
+                failureAccent.opacity(0.48)
             )
         case .secondary:
             RoundedRectangle(cornerRadius: 8)
@@ -2213,7 +2202,7 @@ private struct LockedRecordingCapsule: View {
         HStack(spacing: 7) {
             roundIconButton(systemName: "xmark", action: onCancel)
 
-            LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
+            LevelWaveLine(level: level, activeColor: Color.white.opacity(0.95))
                 .frame(width: 38, height: 14)
 
             roundIconButton(systemName: "checkmark", action: onConfirm, inverted: true)
@@ -2306,13 +2295,13 @@ private struct MorphingRecordingCapsule: View {
             HStack(spacing: 7) {
                 roundIconButton(systemName: "xmark", action: onCancel)
 
-                LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
+                LevelWaveLine(level: level, activeColor: Color.white.opacity(0.95))
                     .frame(width: 38, height: 14)
 
                 roundIconButton(systemName: "checkmark", action: onConfirm, inverted: true)
             }
         } else {
-            LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
+            LevelWaveLine(level: level, activeColor: Color.white.opacity(0.95))
                 .frame(width: 38, height: 14)
         }
     }
@@ -2682,32 +2671,88 @@ private struct OverlayButton: View {
     }
 }
 
-private struct LevelWaveform: View {
+private struct LevelWaveLine: View {
     let level: Float
     let activeColor: Color
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var displayedLevel: Float = 0
+    @State private var phase: CGFloat = 0
 
     var body: some View {
-        HStack(alignment: .center, spacing: 2.2) {
-            ForEach(0 ..< OverlayWaveformMetrics.barCount, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(activeColor)
-                    .frame(
-                        width: 2.3,
-                        height: OverlayWaveformMetrics.barHeight(for: index, level: displayedLevel)
-                    )
-                    .shadow(color: Color.black.opacity(0.34), radius: 1.6, x: 0, y: 0.6)
-            }
+        let amplitude = OverlayWaveformMetrics.amplitude(for: displayedLevel)
+
+        ZStack {
+            WaveLineShape(amplitude: amplitude, phase: phase)
+                .stroke(
+                    activeColor.opacity(0.34),
+                    style: StrokeStyle(lineWidth: 3.8, lineCap: .round, lineJoin: .round)
+                )
+                .blur(radius: 1.4)
+
+            WaveLineShape(amplitude: amplitude, phase: phase)
+                .stroke(
+                    activeColor,
+                    style: StrokeStyle(lineWidth: 1.55, lineCap: .round, lineJoin: .round)
+                )
+                .shadow(color: Color.black.opacity(0.28), radius: 1.2, x: 0, y: 0.6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .onAppear {
-            displayedLevel = level
+            displayedLevel = max(0, min(1, level))
+            phase = .pi / 2
         }
         .onChange(of: level) { nextLevel in
-            let duration = nextLevel > displayedLevel ? 0.07 : 0.16
+            let clampedLevel = max(0, min(1, nextLevel))
+            guard !reduceMotion else {
+                displayedLevel = clampedLevel
+                return
+            }
+
+            let duration = clampedLevel > displayedLevel ? 0.08 : 0.18
             withAnimation(.easeOut(duration: duration)) {
-                displayedLevel = nextLevel
+                displayedLevel = clampedLevel
+                phase += 0.34 + CGFloat(clampedLevel) * 0.72
             }
         }
+    }
+}
+
+private struct WaveLineShape: Shape {
+    var amplitude: CGFloat
+    var phase: CGFloat
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(amplitude, phase) }
+        set {
+            amplitude = newValue.first
+            phase = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let centerY = rect.midY
+        let availableAmplitude = max(0, rect.height / 2 - 1)
+        let renderedAmplitude = min(amplitude, availableAmplitude)
+
+        for index in 0 ... OverlayWaveformMetrics.sampleCount {
+            let progress = CGFloat(index) / CGFloat(OverlayWaveformMetrics.sampleCount)
+            let point = CGPoint(
+                x: rect.minX + rect.width * progress,
+                y: centerY + renderedAmplitude * OverlayWaveformMetrics.normalizedDisplacement(
+                    at: progress,
+                    phase: phase
+                )
+            )
+
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+
+        return path
     }
 }
