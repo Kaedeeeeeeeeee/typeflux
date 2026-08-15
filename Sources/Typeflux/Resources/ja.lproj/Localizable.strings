@@ -303,7 +303,6 @@
 
 "overlay.recording.listening" = "リスニング";
 "overlay.recording.quickInputHint" = "クイック入力モード";
-"overlay.recording.personaHint" = "このリクエストは%@ペルソナで処理されます";
 "overlay.ask.guidance" = "選択したテキストについて何でも質問してください";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";

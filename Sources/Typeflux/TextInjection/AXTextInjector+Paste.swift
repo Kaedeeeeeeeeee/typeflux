@@ -6,19 +6,31 @@ import Foundation
 // swiftlint:disable identifier_name line_length
 extension AXTextInjector {
     func setText(_ text: String, replaceSelection: Bool) throws {
-        if try insertIntoTypefluxNativeTextTarget(text, replaceSelection: replaceSelection) {
-            return
+        let targetContext = replaceSelection
+            ? activeSelectionContext()
+            : activeInsertionTargetContext()
+        defer {
+            latestInsertionTargetContext = nil
+            if replaceSelection {
+                latestSelectionContext = nil
+            }
         }
 
-        if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
-            NetworkDebugLogger.logMessage(
-                "[Text Injection] blocked Typeflux Ask Answer window before AX write"
-            )
-            throw NSError(
-                domain: "AXTextInjector",
-                code: 10,
-                userInfo: [NSLocalizedDescriptionKey: "Refusing to inject text into Typeflux result windows"]
-            )
+        if targetContext == nil {
+            if try insertIntoTypefluxNativeTextTarget(text, replaceSelection: replaceSelection) {
+                return
+            }
+
+            if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
+                NetworkDebugLogger.logMessage(
+                    "[Text Injection] blocked Typeflux Ask Answer window before AX write"
+                )
+                throw NSError(
+                    domain: "AXTextInjector",
+                    code: 10,
+                    userInfo: [NSLocalizedDescriptionKey: "Refusing to inject text into Typeflux result windows"]
+                )
+            }
         }
 
         if !AXIsProcessTrusted() {
@@ -37,6 +49,32 @@ extension AXTextInjector {
             )
         }
 
+        var contextRestored = false
+        if let targetContext {
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] restoring captured target | \(selectionContextSummary(targetContext))"
+            )
+            if replaceSelection {
+                restoreSelectionContext(targetContext)
+                contextRestored = true
+            } else {
+                guard restoreInsertionTargetContext(targetContext) else {
+                    NetworkDebugLogger.logMessage(
+                        "[Text Injection] captured recording-start target could not be restored"
+                    )
+                    throw NSError(
+                        domain: "AXTextInjector",
+                        code: 14,
+                        userInfo: [
+                            NSLocalizedDescriptionKey:
+                                "The text field selected when dictation started is no longer focused."
+                        ]
+                    )
+                }
+                contextRestored = true
+            }
+        }
+
         let processID = frontmostProcessID()
         let bundleIdentifier = frontmostApplicationBundleIdentifier()
         if isTypefluxOwnedTarget(processID: processID, bundleIdentifier: bundleIdentifier) {
@@ -50,7 +88,6 @@ extension AXTextInjector {
             )
         }
 
-        var contextRestored = false
         let beforeSnapshot = readCurrentInputTextSnapshot()
         NetworkDebugLogger.logMessage(
             """
@@ -60,46 +97,42 @@ extension AXTextInjector {
             textPreview: \(String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(120)))
             beforeSnapshot: \(snapshotSummary(beforeSnapshot))
             activeSelectionContext: \(selectionContextSummary(activeSelectionContext()))
+            activeInsertionTarget: \(selectionContextSummary(activeInsertionTargetContext()))
             """
         )
 
-        if replaceSelection, let context = activeSelectionContext() {
-            NetworkDebugLogger.logMessage(
-                "[Text Injection] restoring selection context before replace | \(selectionContextSummary(context))"
-            )
-            restoreSelectionContext(context)
-            contextRestored = true
-            if context.range != nil,
+        if let targetContext {
+            let canAttemptDirectInput = !replaceSelection || targetContext.range != nil
+            if canAttemptDirectInput,
                try insertTextViaAX(
                    text,
-                   into: context.element,
-                   replaceSelection: true,
-                   selectionRange: context.range,
+                   into: targetContext.element,
+                   replaceSelection: replaceSelection,
+                   selectionRange: targetContext.range,
+                   targetProcessID: targetContext.processID,
                    beforeSnapshot: beforeSnapshot
                 ) {
                 NetworkDebugLogger.logMessage(
-                    "[Text Injection] replace completed via AX direct input"
+                    "[Text Injection] completed via captured AX target"
                 )
-                latestSelectionContext = nil
                 return
             }
             NetworkDebugLogger.logMessage(
-                "[Text Injection] AX direct input unavailable or unverified, falling back"
+                "[Text Injection] captured AX target unavailable or unverified, falling back"
             )
         }
 
-        if let element = focusedElement(),
+        if targetContext == nil,
+           let element = focusedElement(),
            try insertTextViaAX(
                text,
                into: element,
                replaceSelection: replaceSelection,
                selectionRange: nil,
+               targetProcessID: frontmostProcessID(),
                beforeSnapshot: beforeSnapshot
            ) {
             NetworkDebugLogger.logMessage("[Text Injection] completed via focused AX path")
-            if replaceSelection {
-                latestSelectionContext = nil
-            }
             return
         }
 
@@ -107,11 +140,9 @@ extension AXTextInjector {
         try setTextViaPaste(
             text,
             replaceSelection: replaceSelection,
-            contextAlreadyRestored: contextRestored
+            contextAlreadyRestored: contextRestored,
+            targetContext: targetContext
         )
-        if replaceSelection {
-            latestSelectionContext = nil
-        }
         NetworkDebugLogger.logMessage("[Text Injection] paste path completed")
     }
 
@@ -120,6 +151,7 @@ extension AXTextInjector {
         into element: AXUIElement,
         replaceSelection: Bool,
         selectionRange: CFRange?,
+        targetProcessID: pid_t?,
         beforeSnapshot: CurrentInputTextSnapshot
     ) throws -> Bool {
         if try insertTextViaWritableAXValue(
@@ -143,7 +175,7 @@ extension AXTextInjector {
                 if verifyAXWriteApplied(
                     insertedText: text,
                     replaceSelection: true,
-                    targetProcessID: frontmostProcessID(),
+                    targetProcessID: targetProcessID,
                     beforeSnapshot: beforeSnapshot
                 ) {
                     return true
@@ -165,7 +197,7 @@ extension AXTextInjector {
 
         return try insertTextViaUnicodeEvents(
             text,
-            targetProcessID: frontmostProcessID(),
+            targetProcessID: targetProcessID,
             beforeSnapshot: beforeSnapshot,
             elementIsEditable: isLikelyEditable(element: element)
         )
@@ -212,16 +244,17 @@ extension AXTextInjector {
     func setTextViaPaste(
         _ text: String,
         replaceSelection: Bool,
-        contextAlreadyRestored: Bool = false
+        contextAlreadyRestored: Bool = false,
+        targetContext: SelectionContext? = nil
     ) throws {
         let pasteboard = NSPasteboard.general
         let previousSnapshot = capturePasteboardSnapshot(from: pasteboard)
         let strictFallbackEnabled = settingsStore?.strictEditApplyFallbackEnabled ?? false
         let stubbornPasteFallbackEnabled = settingsStore?.stubbornPasteFallbackEnabled ?? false
-        let replacementContext = replaceSelection ? activeSelectionContext() : nil
+        let replacementContext = replaceSelection ? targetContext : nil
 
         let targetPID: pid_t?
-        if let context = replacementContext {
+        if let context = targetContext {
             targetPID = context.processID
             if !contextAlreadyRestored {
                 restoreSelectionContext(context)

@@ -164,16 +164,14 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .holdToTalk,
-            appName: nil,
-            bundleIdentifier: nil
+            recordingMode: .holdToTalk
         )
 
         XCTAssertEqual(hint.text, L("overlay.recording.quickInputHint"))
         XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
     }
 
-    func testRecordingHintUsesPersonaNameWhenQuickInputDoesNotApply() {
+    func testRecordingHintDoesNotShowPersonaWhenQuickInputDoesNotApply() {
         let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
         let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.personaRewriteEnabled = true
@@ -183,16 +181,14 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
+            recordingMode: .locked
         )
 
-        XCTAssertEqual(hint.text, L("overlay.recording.personaHint", persona.name))
-        XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
+        XCTAssertNil(hint.text)
+        XCTAssertNil(hint.autoHideAfter)
     }
 
-    func testRecordingHintUsesPersonaNameForLockedRecordingWhenQuickInputIsEnabled() {
+    func testRecordingHintDoesNotShowPersonaForLockedRecordingWhenQuickInputIsEnabled() {
         let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
         let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.quickInputEnabled = true
@@ -203,13 +199,11 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
+            recordingMode: .locked
         )
 
-        XCTAssertEqual(hint.text, L("overlay.recording.personaHint", persona.name))
-        XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
+        XCTAssertNil(hint.text)
+        XCTAssertNil(hint.autoHideAfter)
     }
 
     func testRecordingHintIsEmptyWhenNoPersonaIsActive() {
@@ -219,9 +213,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
+            recordingMode: .locked
         )
 
         XCTAssertNil(hint.text)
@@ -235,9 +227,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .askSelection,
-            recordingMode: .holdToTalk,
-            appName: nil,
-            bundleIdentifier: nil
+            recordingMode: .holdToTalk
         )
 
         XCTAssertEqual(hint.text, L("overlay.ask.guidance"))
@@ -693,8 +683,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await fulfillment(of: [audioStarted], timeout: 0.5)
 
         let events = eventRecorder.snapshot()
+        let targetCaptureIndex = try XCTUnwrap(events.firstIndex(of: "target-capture"))
         let audioStartIndex = try XCTUnwrap(events.firstIndex(of: "audio-start"))
         let selectionStartIndex = try XCTUnwrap(events.firstIndex(of: "selection-start"))
+        XCTAssertLessThan(targetCaptureIndex, audioStartIndex)
         XCTAssertLessThan(audioStartIndex, selectionStartIndex)
         XCTAssertFalse(events.contains("cue-play"))
         XCTAssertFalse(events.contains("unexpected-sleep"))
@@ -1570,6 +1562,10 @@ private final class SlowSelectionTextInjector: TextInjector {
 
     init(eventRecorder: ThreadSafeEventRecorder) {
         self.eventRecorder = eventRecorder
+    }
+
+    func captureInsertionTarget() {
+        eventRecorder.append("target-capture")
     }
 
     func getSelectionSnapshot() async -> TextSelectionSnapshot {

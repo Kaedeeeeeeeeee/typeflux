@@ -129,9 +129,11 @@ final class AXTextInjector: TextInjector {
     static let visibleTextContextMaxCharacters = 60000
     static let copyShortcutKeyCode: CGKeyCode = 8
     static let selectionContextLifetime: TimeInterval = 180
+    static let insertionTargetContextLifetime: TimeInterval = 660
     static let focusedDescendantSearchDepth = 10
 
     var latestSelectionContext: SelectionContext?
+    var latestInsertionTargetContext: SelectionContext?
 
     func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
         if processID == getpid() {
@@ -309,6 +311,17 @@ final class AXTextInjector: TextInjector {
         return target != frontmostProcessID
     }
 
+    static func isCapturedInsertionTargetRestored(
+        targetProcessID: pid_t?,
+        frontmostProcessID: pid_t?,
+        focusedElementMatches: Bool
+    ) -> Bool {
+        guard let targetProcessID, targetProcessID == frontmostProcessID else {
+            return false
+        }
+        return focusedElementMatches
+    }
+
     /// When the stubborn-paste flag is on, route Cmd+V through the HID tap so the
     /// event behaves like a real physical keystroke and survives non-standard
     /// event pipelines (Electron, NSPanel hotkey windows, etc.). Otherwise keep
@@ -466,6 +479,50 @@ final class AXTextInjector: TextInjector {
     func getSelectionSnapshot() async -> TextSelectionSnapshot {
         await performAXReadOnMainActor {
             self.readSelectionSnapshot()
+        }
+    }
+
+    func captureInsertionTarget() {
+        performAXOperationOnMainThread {
+            latestInsertionTargetContext = nil
+
+            guard AXIsProcessTrusted(),
+                  let processID = frontmostProcessID(),
+                  !isTypefluxOwnedTarget(
+                      processID: processID,
+                      bundleIdentifier: frontmostApplicationBundleIdentifier()
+                  ),
+                  let element = focusedElement(for: processID),
+                  isLikelyEditable(element: element)
+            else {
+                NetworkDebugLogger.logMessage(
+                    "[Text Injection] recording-start target capture unavailable"
+                )
+                return
+            }
+
+            let context = SelectionContext(
+                element: element,
+                range: copySelectedTextRange(from: element),
+                processID: processID,
+                processName: frontmostApplicationName(),
+                selectedText: nil,
+                role: copyStringAttribute(kAXRoleAttribute as String, from: element),
+                windowTitle: containingWindowTitle(of: element) ?? focusedWindowTitle(for: processID),
+                isFocusedTarget: true,
+                source: "recording-start",
+                capturedAt: Date()
+            )
+            latestInsertionTargetContext = context
+            NetworkDebugLogger.logMessage(
+                "[Text Injection] captured recording-start target | \(selectionContextSummary(context))"
+            )
+        }
+    }
+
+    func clearInsertionTarget() {
+        performAXOperationOnMainThread {
+            latestInsertionTargetContext = nil
         }
     }
 

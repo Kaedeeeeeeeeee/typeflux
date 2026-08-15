@@ -410,6 +410,7 @@ final class WorkflowController {
     func cancelRecording() {
         guard isRecording else { return }
         isRecording = false
+        textInjector.clearInsertionTarget()
         let shouldStopAudioRecorder = isAudioRecorderStarted
         isAudioRecorderStarted = false
         isAudioRecorderStarting = false
@@ -901,9 +902,7 @@ final class WorkflowController {
 
     func recordingHintPresentation(
         intent: RecordingIntent,
-        recordingMode: RecordingMode,
-        appName: String?,
-        bundleIdentifier: String?
+        recordingMode: RecordingMode
     ) -> RecordingHintPresentation {
         if intent == .askSelection {
             return RecordingHintPresentation(text: L("overlay.ask.guidance"), autoHideAfter: nil)
@@ -916,26 +915,13 @@ final class WorkflowController {
             )
         }
 
-        guard let persona = settingsStore.effectivePersona(
-            appName: appName,
-            bundleIdentifier: bundleIdentifier
-        ) else {
-            return RecordingHintPresentation(text: nil, autoHideAfter: nil)
-        }
-
-        return RecordingHintPresentation(
-            text: L("overlay.recording.personaHint", persona.name),
-            autoHideAfter: Self.recordingHintAutoHideDelay
-        )
+        return RecordingHintPresentation(text: nil, autoHideAfter: nil)
     }
 
     func currentRecordingHintPresentation() -> RecordingHintPresentation {
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
         return recordingHintPresentation(
             intent: recordingIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            recordingMode: recordingMode
         )
     }
 
@@ -949,6 +935,11 @@ final class WorkflowController {
             ? RecordingIntent.askSelection
             : intent
         let effectiveStartLocked = recordingMode == .locked || startLocked
+        if effectiveIntent == .dictation {
+            textInjector.captureInsertionTarget()
+        } else {
+            textInjector.clearInsertionTarget()
+        }
         isRecording = true
         isAudioRecorderStarted = false
         isAudioRecorderStarting = true
@@ -957,12 +948,9 @@ final class WorkflowController {
         recordingIntent = effectiveIntent
         lastRetryableFailureRecord = nil
         latestRecordingPreviewText = ""
-        let frontmostApplicationContext = Self.frontmostApplicationContext()
         let recordingHint = recordingHintPresentation(
             intent: effectiveIntent,
-            recordingMode: recordingMode,
-            appName: frontmostApplicationContext.appName,
-            bundleIdentifier: frontmostApplicationContext.bundleIdentifier
+            recordingMode: recordingMode
         )
         NSLog("[Workflow] Recording started")
 
@@ -1115,6 +1103,7 @@ final class WorkflowController {
                 self?.finishRecordingFromCurrentMode()
             }
         } catch {
+            textInjector.clearInsertionTarget()
             Task { await liveTranscriptionPreviewer?.cancel() }
             activeRealtimeAudioBufferPump?.cancel()
             Task { await activeRealtimeTranscriptionSession?.cancel() }
@@ -1226,6 +1215,7 @@ final class WorkflowController {
         let recordingStoppedAt = Date()
 
         guard shouldStopAudioRecorder else {
+            textInjector.clearInsertionTarget()
             selectionTask?.cancel()
             selectionTask = nil
             inputContextTask?.cancel()

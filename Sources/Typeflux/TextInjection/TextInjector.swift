@@ -51,9 +51,18 @@ struct CurrentInputTextSnapshot {
 }
 
 protocol TextInjector {
+    /// Captures the editable control that owns focus when dictation starts so
+    /// delayed transcription cannot be delivered to a different control.
+    func captureInsertionTarget()
+    func clearInsertionTarget()
     func getSelectionSnapshot() async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
+}
+
+extension TextInjector {
+    func captureInsertionTarget() {}
+    func clearInsertionTarget() {}
 }

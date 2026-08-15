@@ -1059,6 +1059,30 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testCapturedInsertionTargetIsRestoredOnlyWhenProcessAndElementMatch() {
+        XCTAssertTrue(
+            AXTextInjector.isCapturedInsertionTargetRestored(
+                targetProcessID: 42,
+                frontmostProcessID: 42,
+                focusedElementMatches: true
+            )
+        )
+        XCTAssertFalse(
+            AXTextInjector.isCapturedInsertionTargetRestored(
+                targetProcessID: 42,
+                frontmostProcessID: 99,
+                focusedElementMatches: true
+            )
+        )
+        XCTAssertFalse(
+            AXTextInjector.isCapturedInsertionTargetRestored(
+                targetProcessID: 42,
+                frontmostProcessID: 42,
+                focusedElementMatches: false
+            )
+        )
+    }
+
     func testShouldReactivateProcessForSelectionRestoreActivatesWhenTargetDiffers() {
         let result = AXTextInjector.shouldReactivateProcessForSelectionRestore(
             targetProcessID: 42,

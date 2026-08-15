@@ -2,28 +2,39 @@
 import XCTest
 
 final class OverlayWaveformMetricsTests: XCTestCase {
-    func testCenterBarPreservesVisibleDifferencesAcrossLevelRange() {
-        let quietHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.05)
-        let conversationalHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.5)
-        let loudHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.95)
+    func testAmplitudePreservesVisibleDifferencesAcrossLevelRange() {
+        let quietAmplitude = OverlayWaveformMetrics.amplitude(for: 0.05)
+        let conversationalAmplitude = OverlayWaveformMetrics.amplitude(for: 0.5)
+        let loudAmplitude = OverlayWaveformMetrics.amplitude(for: 0.95)
 
-        XCTAssertGreaterThan(conversationalHeight - quietHeight, 5)
-        XCTAssertGreaterThan(loudHeight - conversationalHeight, 5)
+        XCTAssertGreaterThan(conversationalAmplitude, quietAmplitude)
+        XCTAssertGreaterThan(loudAmplitude, conversationalAmplitude)
     }
 
-    func testLevelsClampToCapsuleWaveformBounds() {
-        let minimumHeight = OverlayWaveformMetrics.barHeight(for: 4, level: -1)
-        let zeroHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0)
-        let maximumHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 2)
+    func testLevelsClampToWaveLineBounds() {
+        let minimumAmplitude = OverlayWaveformMetrics.amplitude(for: -1)
+        let zeroAmplitude = OverlayWaveformMetrics.amplitude(for: 0)
+        let maximumAmplitude = OverlayWaveformMetrics.amplitude(for: 2)
 
-        XCTAssertEqual(minimumHeight, zeroHeight, accuracy: 0.001)
-        XCTAssertEqual(maximumHeight, 14.0, accuracy: 0.001)
+        XCTAssertEqual(minimumAmplitude, zeroAmplitude, accuracy: 0.001)
+        XCTAssertEqual(maximumAmplitude, 6.0, accuracy: 0.001)
     }
 
-    func testProfileKeepsOuterBarsShorterThanCenter() {
-        let centerHeight = OverlayWaveformMetrics.barHeight(for: 4, level: 0.6)
-        let outerHeight = OverlayWaveformMetrics.barHeight(for: 8, level: 0.6)
+    func testEnvelopeTapersWaveLineAtBothEdges() {
+        XCTAssertEqual(OverlayWaveformMetrics.envelope(at: 0), 0, accuracy: 0.001)
+        XCTAssertEqual(OverlayWaveformMetrics.envelope(at: 1), 0, accuracy: 0.001)
+        XCTAssertEqual(OverlayWaveformMetrics.envelope(at: 0.5), 1, accuracy: 0.001)
+    }
 
-        XCTAssertLessThan(outerHeight, centerHeight)
+    func testNormalizedDisplacementStaysWithinUnitBounds() {
+        for index in 0 ... OverlayWaveformMetrics.sampleCount {
+            let progress = CGFloat(index) / CGFloat(OverlayWaveformMetrics.sampleCount)
+            let displacement = OverlayWaveformMetrics.normalizedDisplacement(
+                at: progress,
+                phase: 1.25
+            )
+
+            XCTAssertLessThanOrEqual(abs(displacement), 1.0)
+        }
     }
 }

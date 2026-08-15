@@ -381,6 +381,7 @@ extension WorkflowController {
         recordingStoppedAt: Date,
         bypassPersonaRewrite: Bool = false
     ) async {
+        defer { textInjector.clearInsertionTarget() }
         do {
             let finishStartedAt = Date()
             NetworkDebugLogger

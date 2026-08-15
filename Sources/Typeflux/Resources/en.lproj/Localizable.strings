@@ -307,7 +307,6 @@
 
 "overlay.recording.listening" = "Listening";
 "overlay.recording.quickInputHint" = "Quick input mode";
-"overlay.recording.personaHint" = "This request will be processed with the %@ persona";
 "overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.transcribing" = "Thinking";
 "overlay.processing.thinking" = "Thinking";
