@@ -1043,3 +1043,15 @@
 "agent.clarification.hotkeyHint" = "ホットキーを押し続けて返答を録音";
 "agent.clarification.recordingHint" = "録音中... 完了したらホットキーを離してください";
 "agent.clarification.transcribingHint" = "思考中...";
+"provider.llm.appleFoundationModel" = "Apple Intelligence";
+"settings.models.card.appleFoundationModel.summary" = "Appleのオンデバイス基盤モデルを使用し、プライベートかつオフラインで文章を書き換えます。";
+"settings.models.appleFoundationModel.systemModel" = "システムのオンデバイスモデル";
+"settings.models.appleFoundationModel.noConfiguration" = "TypefluxでAPIキーやモデルのダウンロードを管理する必要はありません。利用可否はApple IntelligenceとmacOSにインストールされたシステムモデルに従います。";
+"settings.models.appleFoundationModel.available" = "オンデバイスモデルを使用できます。";
+"settings.models.appleFoundationModel.unsupportedSystemVersion" = "macOS 26以降が必要です。";
+"settings.models.appleFoundationModel.deviceNotEligible" = "このMacはApple Intelligenceに対応していません。";
+"settings.models.appleFoundationModel.appleIntelligenceNotEnabled" = "システム設定でApple Intelligenceを有効にしてください。";
+"settings.models.appleFoundationModel.modelNotReady" = "Appleのオンデバイスモデルはダウンロード中か、まだ準備ができていません。";
+"settings.models.overview.appleFoundationModel" = "macOS内蔵のAppleモデルを使用して、プライベートにテキストを生成します。";
+"settings.models.focused.appleFoundationModel" = "AppleのFoundation Modelsフレームワークを通じて、ローカルで文章を書き換えます。";
+"settings.models.routing.appleFoundationModel" = "Appleオンデバイス基盤モデル";

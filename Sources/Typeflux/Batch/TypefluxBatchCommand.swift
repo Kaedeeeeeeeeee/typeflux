@@ -1103,6 +1103,8 @@ private final class WAVPersonaBenchmark {
             settingsStore.llmRemoteProvider.rawValue
         case .ollama:
             "ollama"
+        case .appleFoundationModel:
+            "appleFoundationModel"
         }
     }
 
@@ -1112,6 +1114,8 @@ private final class WAVPersonaBenchmark {
             settingsStore.llmModel
         case .ollama:
             settingsStore.ollamaModel
+        case .appleFoundationModel:
+            "system"
         }
     }
 

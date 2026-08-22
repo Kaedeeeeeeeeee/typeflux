@@ -29,6 +29,7 @@ final class LLMRouterTests: XCTestCase {
     private var settings: SettingsStore!
     private var openAISpy: SpyLLMService!
     private var ollamaSpy: SpyLLMService!
+    private var appleFoundationModelSpy: SpyLLMService!
     private var router: LLMRouter!
 
     override func setUp() {
@@ -37,7 +38,13 @@ final class LLMRouterTests: XCTestCase {
         settings = SettingsStore(defaults: defaults)
         openAISpy = SpyLLMService()
         ollamaSpy = SpyLLMService()
-        router = LLMRouter(settingsStore: settings, openAICompatible: openAISpy, ollama: ollamaSpy)
+        appleFoundationModelSpy = SpyLLMService()
+        router = LLMRouter(
+            settingsStore: settings,
+            openAICompatible: openAISpy,
+            ollama: ollamaSpy,
+            appleFoundationModel: appleFoundationModelSpy
+        )
     }
 
     override func tearDown() {
@@ -45,6 +52,7 @@ final class LLMRouterTests: XCTestCase {
         settings = nil
         openAISpy = nil
         ollamaSpy = nil
+        appleFoundationModelSpy = nil
         router = nil
         super.tearDown()
     }
@@ -63,6 +71,17 @@ final class LLMRouterTests: XCTestCase {
         XCTAssertEqual(result, "completed")
         XCTAssertEqual(ollamaSpy.completeCallCount, 1)
         XCTAssertEqual(openAISpy.completeCallCount, 0)
+    }
+
+    func testCompleteRoutesToAppleFoundationModel() async throws {
+        settings.llmProvider = .appleFoundationModel
+
+        let result = try await router.complete(systemPrompt: "sys", userPrompt: "usr")
+
+        XCTAssertEqual(result, "completed")
+        XCTAssertEqual(appleFoundationModelSpy.completeCallCount, 1)
+        XCTAssertEqual(openAISpy.completeCallCount, 0)
+        XCTAssertEqual(ollamaSpy.completeCallCount, 0)
     }
 
     func testCompleteJSONRoutesToOpenAI() async throws {

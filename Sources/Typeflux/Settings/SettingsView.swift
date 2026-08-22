@@ -3718,7 +3718,7 @@ struct StudioView: View {
     private var ollamaModelSuggestions: [String] {
         uniqueSuggestions([
             viewModel.ollamaModel,
-            "qwen2.5:7b",
+            "qwen3.5:9b",
             "llama3.2:3b",
             "gemma3:4b"
         ])
@@ -3831,7 +3831,7 @@ struct StudioView: View {
                     )
                     StudioSuggestedTextInputCard(
                         label: L("settings.models.localModel"),
-                        placeholder: "qwen2.5:7b",
+                        placeholder: "qwen3.5:9b",
                         text: Binding(
                             get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel
                         ),
@@ -4286,7 +4286,7 @@ struct StudioView: View {
         case .stt:
             viewModel.sttProvider == .appleSpeech || viewModel.sttProvider == .localModel
         case .llm:
-            viewModel.llmProvider == .ollama
+            viewModel.llmProvider == .ollama || viewModel.llmProvider == .appleFoundationModel
         }
     }
 
@@ -4359,7 +4359,7 @@ struct StudioView: View {
         case "ollama-local":
             viewModel.setLLMModelSelection(
                 .ollama,
-                suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
+                suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen3.5:9b" : viewModel.ollamaModel
             )
         default:
             if let providerID = StudioModelProviderID(rawValue: card.id),
@@ -4397,8 +4397,14 @@ struct StudioView: View {
                 .deepgram
             }
         case .llm:
-            viewModel.llmProvider == .ollama
-                ? .ollama : viewModel.llmRemoteProvider.studioProviderID
+            switch viewModel.llmProvider {
+            case .openAICompatible:
+                viewModel.llmRemoteProvider.studioProviderID
+            case .ollama:
+                .ollama
+            case .appleFoundationModel:
+                .appleFoundationModel
+            }
         }
     }
 
@@ -4563,6 +4569,19 @@ struct StudioView: View {
                 actionTitle: L("settings.models.useLocal")
             )
         ))
+        standardCards.append((
+            name: LLMProvider.appleFoundationModel.displayName,
+            card: StudioModelCard(
+                id: StudioModelProviderID.appleFoundationModel.rawValue,
+                name: LLMProvider.appleFoundationModel.displayName,
+                summary: L("settings.models.card.appleFoundationModel.summary"),
+                badge: L("settings.models.badge.local"),
+                metadata: viewModel.appleFoundationModelAvailabilityText,
+                isSelected: viewModel.llmProvider == .appleFoundationModel,
+                isMuted: false,
+                actionTitle: L("settings.models.useLocal")
+            )
+        ))
         standardCards.sort { lhs, rhs in
             lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
@@ -4700,7 +4719,8 @@ struct StudioView: View {
                 focusedProviderForm
 
                 if [
-                    StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
+                    StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .appleFoundationModel,
+                    .ollama, .aliCloud,
                     .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .deepgram
                 ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
                     HStack(spacing: StudioTheme.Spacing.small) {
@@ -5009,7 +5029,7 @@ struct StudioView: View {
                 )
                 StudioSuggestedTextInputCard(
                     label: L("settings.models.localModel"),
-                    placeholder: "qwen2.5:7b",
+                    placeholder: "qwen3.5:9b",
                     text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
                     suggestions: ollamaModelSuggestions
                 )
@@ -5020,6 +5040,25 @@ struct StudioView: View {
                     )
                 )
                 .toggleStyle(.switch)
+
+            case .appleFoundationModel:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Label(
+                        viewModel.appleFoundationModelAvailabilityText,
+                        systemImage: viewModel.appleFoundationModelAvailability.isAvailable
+                            ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                    )
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .foregroundStyle(
+                        viewModel.appleFoundationModelAvailability.isAvailable
+                            ? StudioTheme.success : StudioTheme.textSecondary
+                    )
+
+                    Text(L("settings.models.appleFoundationModel.noConfiguration"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
             case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
                  .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
@@ -5250,7 +5289,10 @@ struct StudioView: View {
 
     private var shouldShowFocusedLLMConnectionTestButton: Bool {
         guard viewModel.focusedModelProvider.domain == .llm else { return false }
-        guard viewModel.focusedModelProvider == .ollama || focusedLLMRemoteProvider != nil else {
+        guard viewModel.focusedModelProvider == .ollama
+            || viewModel.focusedModelProvider == .appleFoundationModel
+            || focusedLLMRemoteProvider != nil
+        else {
             return false
         }
 
@@ -5492,7 +5534,7 @@ struct StudioView: View {
 
     private func providerLogoResourceName(for provider: StudioModelProviderID) -> String? {
         switch provider {
-        case .freeSTT:
+        case .freeSTT, .appleFoundationModel:
             nil
         case .whisperAPI, .multimodalLLM:
             "openai"
@@ -5728,6 +5770,8 @@ struct StudioView: View {
             !viewModel.whisperAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .ollama:
             !viewModel.ollamaModel.isEmpty
+        case .appleFoundationModel:
+            viewModel.appleFoundationModelAvailability.isAvailable
         case .freeModel:
             !viewModel.llmModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && FreeLLMModelRegistry.resolve(modelName: viewModel.llmModel) != nil
@@ -5778,9 +5822,11 @@ struct StudioView: View {
             viewModel.applyModelConfiguration(shouldShowToast: false)
             viewModel.setLLMModelSelection(
                 .ollama,
-                suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
+                suggestedModel: viewModel.ollamaModel.isEmpty ? "qwen3.5:9b" : viewModel.ollamaModel
             )
             viewModel.prepareOllamaModel()
+        case .appleFoundationModel:
+            viewModel.setLLMProvider(.appleFoundationModel)
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             if let provider = focusedLLMRemoteProvider {
@@ -5823,6 +5869,8 @@ struct StudioView: View {
             "dot.radiowaves.left.and.right"
         case .ollama:
             "cpu"
+        case .appleFoundationModel:
+            "apple.logo"
         case .freeModel:
             "giftcard"
         case .customLLM:
@@ -5900,6 +5948,8 @@ struct StudioView: View {
             L("settings.models.overview.whisper")
         case .ollama:
             L("settings.models.overview.ollama")
+        case .appleFoundationModel:
+            L("settings.models.overview.appleFoundationModel")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L("settings.models.overview.remoteProvider", activeLLMRemoteProvider.displayName)
@@ -5932,6 +5982,8 @@ struct StudioView: View {
             STTProvider.whisperAPI.displayName
         case .ollama:
             LLMProvider.ollama.displayName
+        case .appleFoundationModel:
+            LLMProvider.appleFoundationModel.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             activeLLMRemoteProvider.displayName
@@ -5954,7 +6006,7 @@ struct StudioView: View {
 
     private var modelOverviewModePill: String {
         switch activeModelProviderID {
-        case .appleSpeech, .localSTT, .ollama:
+        case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
@@ -5965,7 +6017,7 @@ struct StudioView: View {
 
     private var modelOverviewModeTone: Color {
         switch activeModelProviderID {
-        case .appleSpeech, .localSTT, .ollama:
+        case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
@@ -5976,7 +6028,7 @@ struct StudioView: View {
 
     private var modelOverviewModeFill: Color {
         switch activeModelProviderID {
-        case .appleSpeech, .localSTT, .ollama:
+        case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
@@ -6081,7 +6133,9 @@ struct StudioView: View {
                     forEndpoint: viewModel.whisperBaseURL
                 ) : viewModel.whisperModel
         case .ollama:
-            viewModel.ollamaModel.isEmpty ? "qwen2.5:7b" : viewModel.ollamaModel
+            viewModel.ollamaModel.isEmpty ? "qwen3.5:9b" : viewModel.ollamaModel
+        case .appleFoundationModel:
+            L("settings.models.appleFoundationModel.systemModel")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             viewModel.llmModel.isEmpty
@@ -6122,6 +6176,8 @@ struct StudioView: View {
             STTProvider.whisperAPI.displayName
         case .ollama:
             LLMProvider.ollama.displayName
+        case .appleFoundationModel:
+            LLMProvider.appleFoundationModel.displayName
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
@@ -6154,6 +6210,8 @@ struct StudioView: View {
             L("settings.models.focused.whisper")
         case .ollama:
             L("settings.models.focused.ollama")
+        case .appleFoundationModel:
+            L("settings.models.focused.appleFoundationModel")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L(
@@ -6195,6 +6253,8 @@ struct StudioView: View {
             L("settings.models.routing.whisper")
         case .ollama:
             L("settings.models.routing.ollama")
+        case .appleFoundationModel:
+            L("settings.models.routing.appleFoundationModel")
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             L("settings.models.routing.remoteProvider", activeLLMRemoteProvider.displayName)

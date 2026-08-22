@@ -25,6 +25,7 @@ final class LLMAgentRouterTests: XCTestCase {
     private var settings: SettingsStore!
     private var remoteSpy: MockLLMAgentService!
     private var ollamaSpy: MockLLMAgentService!
+    private var appleFoundationModelSpy: MockLLMAgentService!
     private var router: LLMAgentRouter!
 
     private var suiteName: String!
@@ -36,7 +37,13 @@ final class LLMAgentRouterTests: XCTestCase {
         settings = SettingsStore(defaults: defaults)
         remoteSpy = MockLLMAgentService()
         ollamaSpy = MockLLMAgentService()
-        router = LLMAgentRouter(settingsStore: settings, remote: remoteSpy, ollama: ollamaSpy)
+        appleFoundationModelSpy = MockLLMAgentService()
+        router = LLMAgentRouter(
+            settingsStore: settings,
+            remote: remoteSpy,
+            ollama: ollamaSpy,
+            appleFoundationModel: appleFoundationModelSpy
+        )
     }
 
     override func tearDown() {
@@ -45,6 +52,7 @@ final class LLMAgentRouterTests: XCTestCase {
         settings = nil
         remoteSpy = nil
         ollamaSpy = nil
+        appleFoundationModelSpy = nil
         router = nil
         suiteName = nil
         super.tearDown()
@@ -72,6 +80,19 @@ final class LLMAgentRouterTests: XCTestCase {
         XCTAssertEqual(result, "ollama result")
         XCTAssertNotNil(ollamaSpy.lastRequest)
         XCTAssertNil(remoteSpy.lastRequest)
+    }
+
+    func testRoutesToAppleFoundationModelService() async throws {
+        settings.llmProvider = .appleFoundationModel
+        appleFoundationModelSpy.resultToReturn = "apple result"
+
+        let request = LLMAgentRequest(systemPrompt: "sys", userPrompt: "usr", tools: [])
+        let result: String = try await router.runTool(request: request, decoding: String.self)
+
+        XCTAssertEqual(result, "apple result")
+        XCTAssertNotNil(appleFoundationModelSpy.lastRequest)
+        XCTAssertNil(remoteSpy.lastRequest)
+        XCTAssertNil(ollamaSpy.lastRequest)
     }
 
     func testOllamaAgentServiceThrowsUnsupportedProvider() async {

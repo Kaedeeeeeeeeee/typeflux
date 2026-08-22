@@ -238,6 +238,7 @@ final class StudioViewModel: ObservableObject {
     private let historyStoreBox: HistoryStoreSendableBox
     let agentJobStore: AgentJobStore
     private let modelManager: OllamaModelManaging
+    private let appleFoundationModel: AppleFoundationModelService
     private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
     private let audioDeviceManager: AudioDeviceManager
@@ -268,6 +269,7 @@ final class StudioViewModel: ObservableObject {
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         agentJobStore: AgentJobStore = SQLiteAgentJobStore(),
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
+        appleFoundationModel: AppleFoundationModelService? = nil,
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
@@ -278,6 +280,8 @@ final class StudioViewModel: ObservableObject {
         historyStoreBox = HistoryStoreSendableBox(historyStore)
         self.agentJobStore = agentJobStore
         self.modelManager = modelManager
+        self.appleFoundationModel = appleFoundationModel
+            ?? AppleFoundationModelService(settingsStore: settingsStore)
         self.localModelManager = localModelManager
         self.notificationService = notificationService
         self.audioDeviceManager = audioDeviceManager
@@ -565,6 +569,14 @@ final class StudioViewModel: ObservableObject {
 
     var isOllamaFailed: Bool {
         !isPreparingOllama && ollamaStatus.hasPrefix(L("common.failedPrefix"))
+    }
+
+    var appleFoundationModelAvailability: AppleFoundationModelAvailability {
+        appleFoundationModel.availability
+    }
+
+    var appleFoundationModelAvailabilityText: String {
+        appleFoundationModelAvailability.localizedMessage
     }
 
     var localSTTNeedsRetry: Bool {
@@ -1027,7 +1039,14 @@ final class StudioViewModel: ObservableObject {
     func setLLMProvider(_ provider: LLMProvider) {
         llmProvider = provider
         settingsStore.llmProvider = provider
-        focusedModelProvider = provider == .ollama ? .ollama : llmRemoteProvider.studioProviderID
+        switch provider {
+        case .openAICompatible:
+            focusedModelProvider = llmRemoteProvider.studioProviderID
+        case .ollama:
+            focusedModelProvider = .ollama
+        case .appleFoundationModel:
+            focusedModelProvider = .appleFoundationModel
+        }
         settingsStore.applyDefaultPersonaIfLLMConfigured()
     }
 
@@ -1146,6 +1165,8 @@ final class StudioViewModel: ObservableObject {
         case .openAICompatible:
             llmModel = suggestedModel
             settingsStore.setLLMModel(suggestedModel, for: llmRemoteProvider)
+        case .appleFoundationModel:
+            break
         }
         settingsStore.applyDefaultPersonaIfLLMConfigured()
     }
@@ -2397,6 +2418,8 @@ final class StudioViewModel: ObservableObject {
         case .ollama:
             settingsStore.ollamaBaseURL = ollamaBaseURL
             settingsStore.ollamaModel = ollamaModel
+        case .appleFoundationModel:
+            break
         case .freeSTT:
             settingsStore.freeSTTModel = freeSTTModel
         case .whisperAPI:
@@ -2439,7 +2462,9 @@ final class StudioViewModel: ObservableObject {
 
     func focusedLLMProviderMissingAPIKey() -> Bool {
         guard focusedModelProvider.domain == .llm else { return false }
-        guard focusedModelProvider != .ollama else { return false }
+        guard focusedModelProvider != .ollama, focusedModelProvider != .appleFoundationModel else {
+            return false
+        }
         guard focusedModelProvider != .freeModel else { return false }
         return llmAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -2554,6 +2579,15 @@ final class StudioViewModel: ObservableObject {
                             }
                             if payload.done || collected.count >= 60 { break }
                         }
+                    case .appleFoundationModel:
+                        let preview = try await self.appleFoundationModel.complete(
+                            systemPrompt: "Reply briefly.",
+                            userPrompt: "Reply with exactly: OK"
+                        )
+                        if !preview.isEmpty {
+                            firstTokenDate = Date()
+                        }
+                        collected = preview
                     case .appleSpeech, .localSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
                          .googleCloud, .groqSTT, .soniox, .deepgram:
                         return (firstTokenDate, collected)
@@ -2807,7 +2841,14 @@ final class StudioViewModel: ObservableObject {
                 .deepgram
             }
         case .llm:
-            llmProvider == .ollama ? .ollama : llmRemoteProvider.studioProviderID
+            switch llmProvider {
+            case .openAICompatible:
+                llmRemoteProvider.studioProviderID
+            case .ollama:
+                .ollama
+            case .appleFoundationModel:
+                .appleFoundationModel
+            }
         }
     }
 

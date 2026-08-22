@@ -400,6 +400,11 @@ struct OnboardingView: View {
                                 )
                             } + [
                                 (
+                                    title: LLMProvider.appleFoundationModel.displayName,
+                                    providerID: StudioModelProviderID.appleFoundationModel,
+                                    remoteProvider: nil
+                                ),
+                                (
                                     title: LLMProvider.ollama.displayName,
                                     providerID: StudioModelProviderID.ollama,
                                     remoteProvider: nil
@@ -430,7 +435,7 @@ struct OnboardingView: View {
                                     viewModel.selectLLMRemoteProvider(provider)
                                 }
                             }
-                        } else {
+                        } else if option.providerID == .ollama {
                             modelProviderCard(
                                 providerID: .ollama,
                                 title: L("provider.llm.ollama"),
@@ -440,6 +445,18 @@ struct OnboardingView: View {
                             ) {
                                 withAnimation(.easeOut(duration: 0.18)) {
                                     viewModel.selectOllama()
+                                }
+                            }
+                        } else {
+                            modelProviderCard(
+                                providerID: .appleFoundationModel,
+                                title: L("provider.llm.appleFoundationModel"),
+                                description: L("settings.models.card.appleFoundationModel.summary"),
+                                badge: L("settings.models.badge.local"),
+                                isSelected: viewModel.llmProvider == .appleFoundationModel
+                            ) {
+                                withAnimation(.easeOut(duration: 0.18)) {
+                                    viewModel.selectAppleFoundationModel()
                                 }
                             }
                         }
@@ -872,9 +889,9 @@ struct OnboardingView: View {
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: "qwen2.5:7b",
+                    placeholder: "qwen3.5:9b",
                     text: $viewModel.ollamaModel,
-                    suggestions: [viewModel.ollamaModel, "qwen2.5:7b", "llama3.2:3b", "gemma3:4b"]
+                    suggestions: [viewModel.ollamaModel, "qwen3.5:9b", "llama3.2:3b", "gemma3:4b"]
                         .filter { !$0.isEmpty }
                 )
             }
@@ -963,13 +980,11 @@ struct OnboardingView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(onboardingTertiaryText)
 
-            Text(viewModel.llmProvider == .ollama ? L("provider.llm.ollama") : viewModel.llmRemoteProvider.displayName)
+            Text(llmProviderTitle)
                 .font(.studioDisplay(18, weight: .bold))
                 .foregroundStyle(onboardingPrimaryText)
 
-            Text(viewModel.llmProvider == .ollama
-                ? L("settings.models.card.ollama.summary")
-                : L("settings.models.card.\(viewModel.llmRemoteProvider.rawValue).summary"))
+            Text(llmProviderSummary)
                 .font(.studioBody(12))
                 .foregroundStyle(onboardingSecondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -977,6 +992,27 @@ struct OnboardingView: View {
             Group {
                 if viewModel.llmProvider == .ollama {
                     ollamaConfigFields
+                } else if viewModel.llmProvider == .appleFoundationModel {
+                    onboardingConfigCard {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(
+                                viewModel.appleFoundationModelAvailability.localizedMessage,
+                                systemImage: viewModel.appleFoundationModelAvailability.isAvailable
+                                    ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                            )
+                            .font(.studioBody(12, weight: .semibold))
+                            .foregroundStyle(
+                                viewModel.appleFoundationModelAvailability.isAvailable
+                                    ? StudioTheme.success : onboardingSecondaryText
+                            )
+
+                            Text(L("settings.models.appleFoundationModel.noConfiguration"))
+                                .font(.studioBody(12))
+                                .foregroundStyle(onboardingSecondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 } else {
                     llmRemoteConfigFields
                 }
@@ -985,7 +1021,7 @@ struct OnboardingView: View {
             if llmProviderSupportsTest {
                 HStack(spacing: 12) {
                     if let url = llmProviderAPIKeyURL(viewModel.llmRemoteProvider),
-                       viewModel.llmProvider != .ollama {
+                       viewModel.llmProvider == .openAICompatible {
                         Link(destination: url) {
                             HStack(spacing: 5) {
                                 Image(systemName: "key")
@@ -1096,7 +1132,7 @@ struct OnboardingView: View {
     }
 
     private var llmProviderSupportsTest: Bool {
-        if viewModel.llmProvider == .ollama {
+        if viewModel.llmProvider == .ollama || viewModel.llmProvider == .appleFoundationModel {
             return true
         }
 
@@ -1105,6 +1141,28 @@ struct OnboardingView: View {
             false
         default:
             true
+        }
+    }
+
+    private var llmProviderTitle: String {
+        switch viewModel.llmProvider {
+        case .openAICompatible:
+            viewModel.llmRemoteProvider.displayName
+        case .ollama:
+            L("provider.llm.ollama")
+        case .appleFoundationModel:
+            L("provider.llm.appleFoundationModel")
+        }
+    }
+
+    private var llmProviderSummary: String {
+        switch viewModel.llmProvider {
+        case .openAICompatible:
+            L("settings.models.card.\(viewModel.llmRemoteProvider.rawValue).summary")
+        case .ollama:
+            L("settings.models.card.ollama.summary")
+        case .appleFoundationModel:
+            L("settings.models.card.appleFoundationModel.summary")
         }
     }
 
@@ -1187,7 +1245,7 @@ struct OnboardingView: View {
 
     private func providerLogoResourceName(for providerID: StudioModelProviderID) -> String? {
         switch providerID {
-        case .freeSTT: nil
+        case .freeSTT, .appleFoundationModel: nil
         case .whisperAPI, .multimodalLLM: "openai"
         case .ollama: "ollama"
         case .freeModel: nil
@@ -1219,6 +1277,7 @@ struct OnboardingView: View {
         case .freeSTT: "giftcard"
         case .whisperAPI: "dot.radiowaves.left.and.right"
         case .ollama: "cpu"
+        case .appleFoundationModel: "apple.logo"
         case .freeModel: "giftcard"
         case .customLLM: "slider.horizontal.3"
         case .openRouter: "arrow.triangle.branch"

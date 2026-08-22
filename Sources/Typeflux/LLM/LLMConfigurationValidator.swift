@@ -35,6 +35,9 @@ struct LLMConfigurationValidator {
 
     func validate() -> LLMConfigurationStatus {
         switch settingsStore.llmProvider {
+        case .appleFoundationModel:
+            return .ready
+
         case .ollama:
             let baseURL = settingsStore.ollamaBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
             let model = settingsStore.ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines)

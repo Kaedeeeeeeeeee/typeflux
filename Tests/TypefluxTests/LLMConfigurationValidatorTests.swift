@@ -137,4 +137,13 @@ final class LLMConfigurationValidatorTests: XCTestCase {
 
         XCTAssertEqual(status, .ready)
     }
+
+    func testAppleFoundationModelRequiresNoStoredCredentials() {
+        let store = makeSettingsStore()
+        store.llmProvider = .appleFoundationModel
+
+        let validator = LLMConfigurationValidator(settingsStore: store)
+
+        XCTAssertEqual(validator.validate(), .ready)
+    }
 }

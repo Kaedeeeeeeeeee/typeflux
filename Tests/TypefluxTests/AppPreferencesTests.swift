@@ -117,6 +117,7 @@ final class AppPreferencesTests: XCTestCase {
     func testLLMProviderRawValues() {
         XCTAssertEqual(LLMProvider.openAICompatible.rawValue, "openAICompatible")
         XCTAssertEqual(LLMProvider.ollama.rawValue, "ollama")
+        XCTAssertEqual(LLMProvider.appleFoundationModel.rawValue, "appleFoundationModel")
     }
 
     func testLLMProviderDisplayNamesAreNonEmpty() {

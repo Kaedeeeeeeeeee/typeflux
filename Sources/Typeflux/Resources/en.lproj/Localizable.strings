@@ -1058,3 +1058,15 @@
 "agent.clarification.hotkeyHint" = "Press and hold your hotkey to record a reply";
 "agent.clarification.recordingHint" = "Recording... release hotkey when done";
 "agent.clarification.transcribingHint" = "Thinking...";
+"provider.llm.appleFoundationModel" = "Apple Intelligence";
+"settings.models.card.appleFoundationModel.summary" = "Uses Apple's on-device Foundation Model for private, offline rewriting.";
+"settings.models.appleFoundationModel.systemModel" = "System on-device model";
+"settings.models.appleFoundationModel.noConfiguration" = "Typeflux does not manage an API key or model download. Availability follows Apple Intelligence and the system model installed by macOS.";
+"settings.models.appleFoundationModel.available" = "The on-device model is ready.";
+"settings.models.appleFoundationModel.unsupportedSystemVersion" = "Requires macOS 26 or later.";
+"settings.models.appleFoundationModel.deviceNotEligible" = "This Mac does not support Apple Intelligence.";
+"settings.models.appleFoundationModel.appleIntelligenceNotEnabled" = "Turn on Apple Intelligence in System Settings.";
+"settings.models.appleFoundationModel.modelNotReady" = "Apple's on-device model is still downloading or is not ready.";
+"settings.models.overview.appleFoundationModel" = "Private text generation using Apple's model built into macOS.";
+"settings.models.focused.appleFoundationModel" = "Runs rewriting locally through Apple's Foundation Models framework.";
+"settings.models.routing.appleFoundationModel" = "Apple on-device Foundation Model";

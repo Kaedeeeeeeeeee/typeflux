@@ -157,7 +157,7 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
 
     func testOllamaRequiresBaseURLAndModel() {
         store.llmProvider = .ollama
-        // Default ollamaBaseURL = "http://127.0.0.1:11434", default ollamaModel = "qwen3.5:7b"
+        // Default ollamaBaseURL = "http://127.0.0.1:11434", default ollamaModel = "qwen3.5:9b"
         // So fresh Ollama defaults are considered configured (local-only, no key).
         XCTAssertTrue(store.isLLMConfigured)
 
@@ -167,5 +167,11 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
         store.ollamaModel = "llama3"
         store.ollamaBaseURL = ""
         XCTAssertFalse(store.isLLMConfigured)
+    }
+
+    func testAppleFoundationModelRequiresNoStoredCredentials() {
+        store.llmProvider = .appleFoundationModel
+
+        XCTAssertTrue(store.isLLMConfigured)
     }
 }

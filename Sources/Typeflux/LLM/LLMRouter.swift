@@ -4,11 +4,19 @@ final class LLMRouter: LLMService {
     private let settingsStore: SettingsStore
     private let openAICompatible: LLMService
     private let ollama: LLMService
+    private let appleFoundationModel: LLMService
 
-    init(settingsStore: SettingsStore, openAICompatible: LLMService, ollama: LLMService) {
+    init(
+        settingsStore: SettingsStore,
+        openAICompatible: LLMService,
+        ollama: LLMService,
+        appleFoundationModel: LLMService? = nil
+    ) {
         self.settingsStore = settingsStore
         self.openAICompatible = openAICompatible
         self.ollama = ollama
+        self.appleFoundationModel = appleFoundationModel
+            ?? AppleFoundationModelService(settingsStore: settingsStore)
     }
 
     func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
@@ -17,6 +25,8 @@ final class LLMRouter: LLMService {
             openAICompatible.streamRewrite(request: request)
         case .ollama:
             ollama.streamRewrite(request: request)
+        case .appleFoundationModel:
+            appleFoundationModel.streamRewrite(request: request)
         }
     }
 
@@ -26,6 +36,8 @@ final class LLMRouter: LLMService {
             try await openAICompatible.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         case .ollama:
             try await ollama.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        case .appleFoundationModel:
+            try await appleFoundationModel.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
         }
     }
 
@@ -39,6 +51,12 @@ final class LLMRouter: LLMService {
             )
         case .ollama:
             try await ollama.completeJSON(
+                systemPrompt: systemPrompt,
+                userPrompt: userPrompt,
+                schema: schema
+            )
+        case .appleFoundationModel:
+            try await appleFoundationModel.completeJSON(
                 systemPrompt: systemPrompt,
                 userPrompt: userPrompt,
                 schema: schema

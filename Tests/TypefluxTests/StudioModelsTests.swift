@@ -129,7 +129,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testLLMProvidersDomain() {
         let llmProviders: [StudioModelProviderID] = [
-            .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
+            .appleFoundationModel, .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
             .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi
         ]
         for provider in llmProviders {

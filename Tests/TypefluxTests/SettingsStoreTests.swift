@@ -225,7 +225,7 @@ final class SettingsStoreTests: XCTestCase {
     }
 
     func testDefaultOllamaModel() {
-        XCTAssertEqual(store.ollamaModel, "qwen3.5:7b")
+        XCTAssertEqual(store.ollamaModel, "qwen3.5:9b")
     }
 
     func testSetAndGetOllamaModel() {

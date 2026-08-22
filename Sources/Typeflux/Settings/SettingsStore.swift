@@ -208,7 +208,7 @@ final class SettingsStore {
     }
 
     var ollamaModel: String {
-        get { defaults.string(forKey: "llm.ollama.model") ?? "qwen3.5:7b" }
+        get { defaults.string(forKey: "llm.ollama.model") ?? "qwen3.5:9b" }
         set { defaults.set(newValue, forKey: "llm.ollama.model") }
     }
 
@@ -701,6 +701,8 @@ final class SettingsStore {
     /// Used to drive first-run smart defaults such as auto-selecting the built-in persona.
     var isLLMConfigured: Bool {
         switch llmProvider {
+        case .appleFoundationModel:
+            return true
         case .ollama:
             let baseURL = ollamaBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
             let model = ollamaModel.trimmingCharacters(in: .whitespacesAndNewlines)

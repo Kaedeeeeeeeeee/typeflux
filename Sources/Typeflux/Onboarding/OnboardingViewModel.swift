@@ -107,6 +107,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var showShortcutReplacementAppliedAlert = false
 
     private let settingsStore: SettingsStore
+    private let appleFoundationModel: AppleFoundationModelService
     private let globeKeyReader: GlobeKeyPreferenceReading
     private let localModelManager: (any LocalSTTModelManaging)?
     private let notificationService: LocalNotificationSending
@@ -119,9 +120,11 @@ final class OnboardingViewModel: ObservableObject {
         globeKeyReader: GlobeKeyPreferenceReading = SystemGlobeKeyPreferenceReader(),
         localModelManager: (any LocalSTTModelManaging)? = nil,
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
+        appleFoundationModel: AppleFoundationModelService? = nil,
         onComplete: @escaping () -> Void
     ) {
         self.settingsStore = settingsStore
+        self.appleFoundationModel = appleFoundationModel ?? AppleFoundationModelService(settingsStore: settingsStore)
         self.globeKeyReader = globeKeyReader
         self.localModelManager = localModelManager
         self.notificationService = notificationService
@@ -241,6 +244,8 @@ final class OnboardingViewModel: ObservableObject {
         switch llmProvider {
         case .ollama:
             hasText(ollamaBaseURL) && hasText(ollamaModel)
+        case .appleFoundationModel:
+            appleFoundationModel.availability.isAvailable
         case .openAICompatible:
             switch llmRemoteProvider {
             case .freeModel:
@@ -324,6 +329,15 @@ final class OnboardingViewModel: ObservableObject {
     func selectOllama() {
         llmProvider = .ollama
         llmConnectionTestState = .idle
+    }
+
+    func selectAppleFoundationModel() {
+        llmProvider = .appleFoundationModel
+        llmConnectionTestState = .idle
+    }
+
+    var appleFoundationModelAvailability: AppleFoundationModelAvailability {
+        appleFoundationModel.availability
     }
 
     func selectSTTProvider(_ provider: STTProvider) {
@@ -457,6 +471,7 @@ final class OnboardingViewModel: ObservableObject {
         let apiKey = llmAPIKey
         let ollamaURL = ollamaBaseURL.isEmpty ? "http://127.0.0.1:11434" : ollamaBaseURL
         let ollamaModel = ollamaModel
+        let appleFoundationModel = appleFoundationModel
 
         llmTestTask = Task {
             let start = Date()
@@ -492,6 +507,11 @@ final class OnboardingViewModel: ObservableObject {
                         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
                         let message = json?["message"] as? [String: Any]
                         return (message?["content"] as? String) ?? ""
+                    } else if provider == .appleFoundationModel {
+                        return try await appleFoundationModel.complete(
+                            systemPrompt: "Reply briefly.",
+                            userPrompt: "Reply with exactly: OK"
+                        )
                     } else {
                         let connection = try await LLMConnectionTestResolver.resolve(
                             provider: remoteProvider,
@@ -632,7 +652,7 @@ final class OnboardingViewModel: ObservableObject {
                 settingsStore.setLLMBaseURL(llmBaseURL, for: llmRemoteProvider)
                 settingsStore.setLLMAPIKey(llmAPIKey, for: llmRemoteProvider)
                 settingsStore.setLLMModel(llmModel, for: llmRemoteProvider)
-            } else {
+            } else if llmProvider == .ollama {
                 settingsStore.ollamaBaseURL = ollamaBaseURL
                 settingsStore.ollamaModel = ollamaModel
             }

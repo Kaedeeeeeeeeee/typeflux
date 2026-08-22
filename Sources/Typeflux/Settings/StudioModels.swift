@@ -163,6 +163,7 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
     case groqSTT
     case soniox
     case deepgram
+    case appleFoundationModel
     case ollama
     case freeModel
     case customLLM
@@ -190,7 +191,8 @@ enum StudioModelProviderID: String, CaseIterable, Identifiable {
         case .appleSpeech, .localSTT, .freeSTT, .whisperAPI, .multimodalLLM, .aliCloud, .doubaoRealtime,
              .googleCloud, .groqSTT, .soniox, .deepgram:
             .stt
-        case .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+        case .appleFoundationModel, .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
+             .gemini, .deepSeek,
              .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi, .groq, .openCodeZen, .openCodeGo:
             .llm
         }

@@ -1058,3 +1058,15 @@
 "agent.clarification.hotkeyHint" = "按住快捷键录制回复";
 "agent.clarification.recordingHint" = "录音中... 说完后松开快捷键";
 "agent.clarification.transcribingHint" = "思考中...";
+"provider.llm.appleFoundationModel" = "Apple 智能";
+"settings.models.card.appleFoundationModel.summary" = "使用 Apple 设备端基础模型，私密、离线地完成文本改写。";
+"settings.models.appleFoundationModel.systemModel" = "系统设备端模型";
+"settings.models.appleFoundationModel.noConfiguration" = "Typeflux 无需管理 API 密钥或模型下载；可用性取决于 Apple 智能以及 macOS 安装的系统模型。";
+"settings.models.appleFoundationModel.available" = "设备端模型已就绪。";
+"settings.models.appleFoundationModel.unsupportedSystemVersion" = "需要 macOS 26 或更高版本。";
+"settings.models.appleFoundationModel.deviceNotEligible" = "这台 Mac 不支持 Apple 智能。";
+"settings.models.appleFoundationModel.appleIntelligenceNotEnabled" = "请在系统设置中开启 Apple 智能。";
+"settings.models.appleFoundationModel.modelNotReady" = "Apple 设备端模型仍在下载或尚未就绪。";
+"settings.models.overview.appleFoundationModel" = "使用 macOS 内置的 Apple 模型进行私密文本生成。";
+"settings.models.focused.appleFoundationModel" = "通过 Apple Foundation Models 框架在本机执行文本改写。";
+"settings.models.routing.appleFoundationModel" = "Apple 设备端基础模型";
