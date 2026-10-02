@@ -17,11 +17,14 @@ enum LLMConfigurationError: LocalizedError, Equatable {
 }
 
 enum LLMConfigurationFailureReason: Equatable {
+    case disabled
     case missingAPIKey
     case incompleteConfig(details: String)
 
     var localizedMessage: String {
         switch self {
+        case .disabled:
+            L("workflow.llmNotConfigured.disabled")
         case .missingAPIKey:
             L("workflow.llmNotConfigured.missingAPIKey")
         case .incompleteConfig:
@@ -35,6 +38,8 @@ struct LLMConfigurationValidator {
 
     func validate() -> LLMConfigurationStatus {
         switch settingsStore.llmProvider {
+        case .disabled:
+            return .notConfigured(reason: .disabled)
         case .appleFoundationModel:
             return .ready
 

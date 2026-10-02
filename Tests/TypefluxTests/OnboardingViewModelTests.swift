@@ -170,6 +170,20 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testDisabledLLMIsACompleteChoiceAndPersistsWhenAdvancing() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        viewModel.currentStep = .llm
+
+        viewModel.selectDisabledLLM()
+        XCTAssertTrue(viewModel.isLLMConfigurationComplete)
+
+        viewModel.advance()
+
+        XCTAssertEqual(viewModel.currentStep, .permissions)
+        XCTAssertEqual(store.llmProvider, .disabled)
+    }
+
+    @MainActor
     func testAdvanceFromPermissionsShowsAlertWhenRequiredPermissionsAreMissing() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
         viewModel.currentStep = .permissions

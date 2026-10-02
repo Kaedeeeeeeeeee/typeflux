@@ -11,6 +11,15 @@ final class LLMConfigurationValidatorTests: XCTestCase {
 
     // MARK: - openAICompatible + specific providers
 
+    func testDisabledProviderReturnsExplicitDisabledReason() {
+        let store = makeSettingsStore()
+        store.llmProvider = .disabled
+
+        let validator = LLMConfigurationValidator(settingsStore: store)
+
+        XCTAssertEqual(validator.validate(), .notConfigured(reason: .disabled))
+    }
+
     func testOpenAICompatibleWithOpenAI_MissingAPIKey() {
         let store = makeSettingsStore()
         store.llmProvider = .openAICompatible

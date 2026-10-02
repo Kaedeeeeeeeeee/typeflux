@@ -2,6 +2,31 @@
 import XCTest
 
 final class InputContextSnapshotTests: XCTestCase {
+    func testMakeReturnsWindowOnlyContextWhenFocusedInputHasNoText() {
+        let snapshot = CurrentInputTextSnapshot(
+            processName: "Mail",
+            bundleIdentifier: "com.apple.mail",
+            role: "AXTextArea",
+            text: nil,
+            selectedRange: nil,
+            isEditable: true,
+            isFocusedTarget: true,
+            windowTitle: "Project discussion",
+            windowText: "Alice: Please use the Typeflux naming in the announcement.",
+            windowTextSource: "accessibility-window"
+        )
+
+        let context = InputContextSnapshot.make(
+            inputSnapshot: snapshot,
+            selectionSnapshot: TextSelectionSnapshot()
+        )
+
+        XCTAssertEqual(context?.windowTitle, "Project discussion")
+        XCTAssertEqual(context?.windowTextSource, "accessibility-window")
+        XCTAssertTrue(context?.windowText?.contains("Typeflux naming") == true)
+        XCTAssertTrue(context?.hasContent == true)
+    }
+
     func testMakeReturnsNilWhenInputIsNotEditable() {
         let snapshot = CurrentInputTextSnapshot(
             processName: "Notes",

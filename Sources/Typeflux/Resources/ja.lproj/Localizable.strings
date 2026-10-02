@@ -957,8 +957,8 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "メモリ最適化";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "有効にすると、しばらく使用していないローカル音声モデルをメモリから自動的に解放し、リソース使用量を抑えます。再度使うときは再読み込みされるため、最初の応答が 3 〜 5 秒ほど遅くなる場合があります。";
 
-"settings.advanced.inputContextOptimization.title" = "入力コンテキストを使用";
-"settings.advanced.inputContextOptimization.subtitle" = "カーソル周辺の短いテキストを一時的に読み取り、連続入力、固有名詞、曖昧な語句の最適化に役立てます。履歴には保存されません。";
+"settings.advanced.inputContextOptimization.title" = "ウインドウコンテキストを使用";
+"settings.advanced.inputContextOptimization.subtitle" = "現在のウインドウを一時的に読み取り、関連テキストをローカルで選別して、文脈の連続性、専門用語、曖昧な語句を改善します。ウインドウ内容は履歴に保存されません。";
 
 "settings.advanced.agentFramework.title" = "エージェントフレームワークを有効にする";
 "settings.advanced.agentFramework.subtitle" = "「何でも質問」にはマルチターンのエージェント ループを使用します。ツールの呼び出しと MCP サーバーの統合をサポートします。";
@@ -1055,3 +1055,16 @@
 "settings.models.overview.appleFoundationModel" = "macOS内蔵のAppleモデルを使用して、プライベートにテキストを生成します。";
 "settings.models.focused.appleFoundationModel" = "AppleのFoundation Modelsフレームワークを通じて、ローカルで文章を書き換えます。";
 "settings.models.routing.appleFoundationModel" = "Appleオンデバイス基盤モデル";
+"provider.llm.disabled" = "言語モデルを使用しない";
+"workflow.llmNotConfigured.disabled" = "言語モデルは無効です。書き換え、ペルソナ、Ask Anythingを使うには、モデル設定でモデルを選択してください。";
+"settings.models.card.disabled.summary" = "言語モデルへリクエストを送信せず、音声入力のみを使用します。";
+"settings.models.badge.disabled" = "オフ";
+"settings.models.disabled.speechOnly" = "音声入力のみ";
+"settings.models.disableLLM" = "言語モデルを無効にする";
+"settings.models.disabled.status" = "言語モデル処理はオフです。";
+"settings.models.disabled.noConfiguration" = "設定は不要で、言語モデルへのリクエストも送信されません。Typefluxは音声認識結果をそのまま挿入します。";
+"settings.models.overview.disabled" = "言語モデルによる書き換えや生成を行わず、Typefluxを音声入力のみに使用します。";
+"settings.models.mode.disabled" = "オフ";
+"settings.models.disabled.noRequests" = "言語モデルへのリクエストは送信されません。";
+"settings.models.focused.disabled" = "通常の音声入力を維持しながら、書き換え、ペルソナ、Ask Anythingを無効にします。";
+"settings.models.routing.disabled" = "言語モデル無効";

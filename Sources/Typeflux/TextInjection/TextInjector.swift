@@ -48,6 +48,9 @@ struct CurrentInputTextSnapshot {
     var failureReason: String?
     var documentURL: URL?
     var textSource: String?
+    var windowTitle: String?
+    var windowText: String?
+    var windowTextSource: String?
 }
 
 protocol TextInjector {
@@ -57,6 +60,7 @@ protocol TextInjector {
     func clearInsertionTarget()
     func getSelectionSnapshot() async -> TextSelectionSnapshot
     func currentInputTextSnapshot() async -> CurrentInputTextSnapshot
+    func currentInputTextSnapshotWithWindowContext() async -> CurrentInputTextSnapshot
     func currentInputText() async -> String?
     func insert(text: String) throws
     func replaceSelection(text: String) throws
@@ -65,4 +69,8 @@ protocol TextInjector {
 extension TextInjector {
     func captureInsertionTarget() {}
     func clearInsertionTarget() {}
+
+    func currentInputTextSnapshotWithWindowContext() async -> CurrentInputTextSnapshot {
+        await currentInputTextSnapshot()
+    }
 }

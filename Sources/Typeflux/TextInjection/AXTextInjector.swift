@@ -101,6 +101,21 @@ final class AXTextInjector: TextInjector {
         let selectedRange: CFRange?
     }
 
+    struct WindowContextCapture {
+        let title: String?
+        let text: String
+        let source: String
+    }
+
+    struct WindowContextCaptureRequest {
+        let element: AXUIElement
+        let processID: pid_t?
+        let bundleIdentifier: String?
+        let windowTitle: String?
+        let documentURL: URL?
+        let browserPayload: BrowserDOMContextPayload?
+    }
+
     struct TypefluxNativeTextTarget {
         let textView: NSTextView
         let window: NSWindow?
@@ -127,6 +142,7 @@ final class AXTextInjector: TextInjector {
     static let visibleTextContextMaxNodes = 4000
     static let visibleTextContextSearchDepth = 16
     static let visibleTextContextMaxCharacters = 60000
+    static let windowContextMaxCharacters = 60000
     static let copyShortcutKeyCode: CGKeyCode = 8
     static let selectionContextLifetime: TimeInterval = 180
     static let insertionTargetContextLifetime: TimeInterval = 660
@@ -219,7 +235,10 @@ final class AXTextInjector: TextInjector {
             isFocusedTarget: true,
             failureReason: nil,
             documentURL: nil,
-            textSource: "typeflux-native"
+            textSource: "typeflux-native",
+            windowTitle: target.window?.title,
+            windowText: Self.boundedWindowContextText(target.textView.string),
+            windowTextSource: "typeflux-native"
         )
     }
 
@@ -709,7 +728,14 @@ final class AXTextInjector: TextInjector {
         }
     }
 
-    func readCurrentInputTextSnapshot() -> CurrentInputTextSnapshot {
+    func currentInputTextSnapshotWithWindowContext() async -> CurrentInputTextSnapshot {
+        await performAXReadOnMainActor {
+            self.readCurrentInputTextSnapshot(includeWindowContext: true)
+        }
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity
+    func readCurrentInputTextSnapshot(includeWindowContext: Bool = false) -> CurrentInputTextSnapshot {
         if let target = typefluxNativeTextTarget() {
             NetworkDebugLogger.logMessage(
                 "[AXTextInjector] captured Typeflux native input snapshot"
@@ -763,10 +789,65 @@ final class AXTextInjector: TextInjector {
         }
 
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
+        let subrole = copyStringAttribute(kAXSubroleAttribute as String, from: element)
         let isEditable = isLikelyEditable(element: element)
         let isFocusedTarget = copyBooleanAttribute(kAXFocusedAttribute as String, from: element) ?? false
         let selectedRange = copySelectedTextRange(from: element)
         let documentURL = documentURL(for: element, processID: processID)
+        let windowTitle = containingWindowTitle(of: element) ?? processID.flatMap(focusedWindowTitle(for:))
+        if Self.shouldSuppressWindowContext(
+            bundleIdentifier: bundleIdentifier,
+            role: role,
+            subrole: subrole,
+            windowTitle: windowTitle
+        ) {
+            return CurrentInputTextSnapshot(
+                processID: processID,
+                processName: processName,
+                bundleIdentifier: bundleIdentifier,
+                role: role,
+                text: nil,
+                selectedRange: nil,
+                isEditable: isEditable,
+                isFocusedTarget: isFocusedTarget,
+                failureReason: "sensitive-context-suppressed",
+                documentURL: nil,
+                textSource: nil,
+                windowTitle: windowTitle
+            )
+        }
+
+        let browserPayload = includeWindowContext
+            ? captureBrowserDOMContextPayload(bundleIdentifier: bundleIdentifier)
+            : nil
+        let windowContext = includeWindowContext
+            ? captureWindowContext(
+                WindowContextCaptureRequest(
+                    element: element,
+                    processID: processID,
+                    bundleIdentifier: bundleIdentifier,
+                    windowTitle: windowTitle,
+                    documentURL: documentURL,
+                    browserPayload: browserPayload
+                )
+            )
+            : nil
+
+        func attachingWindowContext(_ snapshot: CurrentInputTextSnapshot) -> CurrentInputTextSnapshot {
+            var result = snapshot
+            result.windowTitle = windowContext?.title ?? windowTitle
+            result.windowText = windowContext?.text
+            result.windowTextSource = windowContext?.source
+            return result
+        }
+
+        func fallbackVisibleText() -> String? {
+            if windowContext?.source == "accessibility-window" {
+                return windowContext?.text
+            }
+            return visibleTextContext(for: element, processID: processID)
+        }
+
         let shouldPreferApplicationState = Self.shouldPreferApplicationStateContextBeforeAXValue(
             bundleIdentifier: bundleIdentifier,
             role: role,
@@ -783,14 +864,13 @@ final class AXTextInjector: TextInjector {
             let applicationStateContext = documentText == nil ? applicationStateContext(
                 bundleIdentifier: bundleIdentifier,
                 selectedText: latestSelectionContext?.selectedText,
-                windowTitle: latestSelectionContext?.windowTitle ?? processID.flatMap(focusedWindowTitle(for:))
+                windowTitle: latestSelectionContext?.windowTitle ?? windowTitle,
+                browserPayload: browserPayload,
+                browserPayloadWasCaptured: includeWindowContext
             ) : nil
-            let visibleText = documentText == nil && applicationStateContext == nil ? visibleTextContext(
-                for: element,
-                processID: processID
-            ) : nil
+            let visibleText = documentText == nil && applicationStateContext == nil ? fallbackVisibleText() : nil
             let contextText = documentText ?? applicationStateContext?.text ?? visibleText
-            return CurrentInputTextSnapshot(
+            return attachingWindowContext(CurrentInputTextSnapshot(
                 processID: processID,
                 processName: processName,
                 bundleIdentifier: bundleIdentifier,
@@ -810,17 +890,19 @@ final class AXTextInjector: TextInjector {
                     applicationStateText: applicationStateContext?.text,
                     visibleText: visibleText
                 )
-            )
+            ))
         }
 
         if shouldPreferApplicationState {
             let applicationStateContext = applicationStateContext(
                 bundleIdentifier: bundleIdentifier,
                 selectedText: latestSelectionContext?.selectedText,
-                windowTitle: latestSelectionContext?.windowTitle ?? processID.flatMap(focusedWindowTitle(for:))
+                windowTitle: latestSelectionContext?.windowTitle ?? windowTitle,
+                browserPayload: browserPayload,
+                browserPayloadWasCaptured: includeWindowContext
             )
             if let applicationStateContext {
-                return CurrentInputTextSnapshot(
+                return attachingWindowContext(CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
                     bundleIdentifier: bundleIdentifier,
@@ -832,7 +914,7 @@ final class AXTextInjector: TextInjector {
                     failureReason: "ax-value-bypassed-application-state-context",
                     documentURL: documentURL,
                     textSource: "application-state"
-                )
+                ))
             }
         }
 
@@ -842,14 +924,13 @@ final class AXTextInjector: TextInjector {
                 let applicationStateContext = documentText == nil ? applicationStateContext(
                     bundleIdentifier: bundleIdentifier,
                     selectedText: latestSelectionContext?.selectedText,
-                    windowTitle: latestSelectionContext?.windowTitle ?? processID.flatMap(focusedWindowTitle(for:))
+                    windowTitle: latestSelectionContext?.windowTitle ?? windowTitle,
+                    browserPayload: browserPayload,
+                    browserPayloadWasCaptured: includeWindowContext
                 ) : nil
-                let visibleText = documentText == nil && applicationStateContext == nil ? visibleTextContext(
-                    for: element,
-                    processID: processID
-                ) : nil
+                let visibleText = documentText == nil && applicationStateContext == nil ? fallbackVisibleText() : nil
                 let contextText = documentText ?? applicationStateContext?.text ?? visibleText
-                return CurrentInputTextSnapshot(
+                return attachingWindowContext(CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
                     bundleIdentifier: bundleIdentifier,
@@ -869,11 +950,11 @@ final class AXTextInjector: TextInjector {
                         applicationStateText: applicationStateContext?.text,
                         visibleText: visibleText
                     )
-                )
+                ))
             }
             if let placeholder = copyTextAttribute(kAXPlaceholderValueAttribute as String, from: element),
                placeholder == value {
-                return CurrentInputTextSnapshot(
+                return attachingWindowContext(CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
                     bundleIdentifier: bundleIdentifier,
@@ -884,10 +965,10 @@ final class AXTextInjector: TextInjector {
                     isFocusedTarget: isFocusedTarget,
                     failureReason: "value-matched-placeholder",
                     documentURL: documentURL
-                )
+                ))
             }
             if let title = copyTextAttribute(kAXTitleAttribute as String, from: element), title == value {
-                return CurrentInputTextSnapshot(
+                return attachingWindowContext(CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
                     bundleIdentifier: bundleIdentifier,
@@ -898,11 +979,11 @@ final class AXTextInjector: TextInjector {
                     isFocusedTarget: isFocusedTarget,
                     failureReason: "value-matched-title",
                     documentURL: documentURL
-                )
+                ))
             }
 
             if shouldSuppressAXValue {
-                return CurrentInputTextSnapshot(
+                return attachingWindowContext(CurrentInputTextSnapshot(
                     processID: processID,
                     processName: processName,
                     bundleIdentifier: bundleIdentifier,
@@ -917,10 +998,10 @@ final class AXTextInjector: TextInjector {
                         contextText: nil
                     ),
                     documentURL: documentURL
-                )
+                ))
             }
 
-            return CurrentInputTextSnapshot(
+            return attachingWindowContext(CurrentInputTextSnapshot(
                 processID: processID,
                 processName: processName,
                 bundleIdentifier: bundleIdentifier,
@@ -932,21 +1013,20 @@ final class AXTextInjector: TextInjector {
                 failureReason: nil,
                 documentURL: documentURL,
                 textSource: "ax-value"
-            )
+            ))
         }
 
         let documentText = documentURL.flatMap(readDocumentContextText(from:))
         let applicationStateContext = documentText == nil ? applicationStateContext(
             bundleIdentifier: bundleIdentifier,
             selectedText: latestSelectionContext?.selectedText,
-            windowTitle: latestSelectionContext?.windowTitle ?? processID.flatMap(focusedWindowTitle(for:))
+            windowTitle: latestSelectionContext?.windowTitle ?? windowTitle,
+            browserPayload: browserPayload,
+            browserPayloadWasCaptured: includeWindowContext
         ) : nil
-        let visibleText = documentText == nil && applicationStateContext == nil ? visibleTextContext(
-            for: element,
-            processID: processID
-        ) : nil
+        let visibleText = documentText == nil && applicationStateContext == nil ? fallbackVisibleText() : nil
         let contextText = documentText ?? applicationStateContext?.text ?? visibleText
-        return CurrentInputTextSnapshot(
+        return attachingWindowContext(CurrentInputTextSnapshot(
             processID: processID,
             processName: processName,
             bundleIdentifier: bundleIdentifier,
@@ -966,7 +1046,7 @@ final class AXTextInjector: TextInjector {
                 applicationStateText: applicationStateContext?.text,
                 visibleText: visibleText
             )
-        )
+        ))
     }
 
     func currentInputText() async -> String? {

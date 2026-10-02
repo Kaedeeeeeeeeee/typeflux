@@ -266,12 +266,15 @@ enum ModelDownloadSource: String, CaseIterable, Codable {
 }
 
 enum LLMProvider: String, CaseIterable, Codable {
+    case disabled
     case openAICompatible
     case ollama
     case appleFoundationModel
 
     var displayName: String {
         switch self {
+        case .disabled:
+            L("provider.llm.disabled")
         case .openAICompatible:
             L("provider.llm.custom")
         case .ollama:

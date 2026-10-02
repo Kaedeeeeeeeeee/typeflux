@@ -28,6 +28,13 @@ final class SettingsStoreLLMConfigurationTests: XCTestCase {
         XCTAssertFalse(store.isLLMConfigured)
     }
 
+    func testDisabledProviderIsNeverConfigured() {
+        store.llmProvider = .disabled
+
+        XCTAssertFalse(store.isLLMConfigured)
+        XCTAssertFalse(store.applyDefaultPersonaIfLLMConfigured())
+    }
+
     // MARK: - custom provider
 
     func testCustomProviderRequiresBaseURLAndModelButNotAPIKey() {

@@ -796,7 +796,14 @@ final class StudioViewModel: ObservableObject {
                 "Remote API"
             }
         case .llm:
-            llmProvider == .ollama ? "Local Processing" : "Remote API"
+            switch llmProvider {
+            case .disabled:
+                "Disabled"
+            case .ollama, .appleFoundationModel:
+                "Local Processing"
+            case .openAICompatible:
+                "Remote API"
+            }
         }
     }
 
@@ -828,7 +835,16 @@ final class StudioViewModel: ObservableObject {
                 "Using Deepgram Nova-3 for multilingual cloud speech recognition."
             }
         case .llm:
-            llmProvider == .ollama ? "Using local Ollama generation." : "Using remote chat-completion endpoints."
+            switch llmProvider {
+            case .disabled:
+                "Language-model processing is disabled."
+            case .ollama:
+                "Using local Ollama generation."
+            case .appleFoundationModel:
+                "Using the on-device Apple Foundation Model."
+            case .openAICompatible:
+                "Using remote chat-completion endpoints."
+            }
         }
     }
 
@@ -1040,6 +1056,8 @@ final class StudioViewModel: ObservableObject {
         llmProvider = provider
         settingsStore.llmProvider = provider
         switch provider {
+        case .disabled:
+            focusedModelProvider = .disabledLLM
         case .openAICompatible:
             focusedModelProvider = llmRemoteProvider.studioProviderID
         case .ollama:
@@ -1159,6 +1177,8 @@ final class StudioViewModel: ObservableObject {
     func setLLMModelSelection(_ provider: LLMProvider, suggestedModel: String) {
         setLLMProvider(provider)
         switch provider {
+        case .disabled:
+            break
         case .ollama:
             ollamaModel = suggestedModel
             settingsStore.ollamaModel = suggestedModel
@@ -2406,6 +2426,8 @@ final class StudioViewModel: ObservableObject {
 
     func applyModelConfiguration(shouldShowToast: Bool = true) {
         switch focusedModelProvider {
+        case .disabledLLM:
+            break
         case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
              .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
             let remoteProvider = LLMRemoteProvider.from(providerID: focusedModelProvider) ?? llmRemoteProvider
@@ -2462,7 +2484,10 @@ final class StudioViewModel: ObservableObject {
 
     func focusedLLMProviderMissingAPIKey() -> Bool {
         guard focusedModelProvider.domain == .llm else { return false }
-        guard focusedModelProvider != .ollama, focusedModelProvider != .appleFoundationModel else {
+        guard focusedModelProvider != .disabledLLM,
+              focusedModelProvider != .ollama,
+              focusedModelProvider != .appleFoundationModel
+        else {
             return false
         }
         guard focusedModelProvider != .freeModel else { return false }
@@ -2490,6 +2515,8 @@ final class StudioViewModel: ObservableObject {
                     var collected = ""
 
                     switch capturedProvider {
+                    case .disabledLLM:
+                        throw LLMConfigurationError.notConfigured(reason: .disabled)
                     case .freeSTT:
                         return (firstTokenDate, collected)
                     case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
@@ -2842,6 +2869,8 @@ final class StudioViewModel: ObservableObject {
             }
         case .llm:
             switch llmProvider {
+            case .disabled:
+                .disabledLLM
             case .openAICompatible:
                 llmRemoteProvider.studioProviderID
             case .ollama:

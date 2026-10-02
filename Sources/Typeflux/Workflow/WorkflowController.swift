@@ -1074,7 +1074,7 @@ final class WorkflowController {
                 inputContextTask = Task { [weak self] in
                     guard let self else { return nil }
                     let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
-                    let inputSnapshot = await textInjector.currentInputTextSnapshot()
+                    let inputSnapshot = await textInjector.currentInputTextSnapshotWithWindowContext()
                     let context = InputContextSnapshot.make(
                         inputSnapshot: inputSnapshot,
                         selectionSnapshot: selectionSnapshot

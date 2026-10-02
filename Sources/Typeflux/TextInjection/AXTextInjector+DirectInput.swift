@@ -67,6 +67,7 @@ extension AXTextInjector {
         snapshot: CurrentInputTextSnapshot,
         targetProcessID: pid_t?
     ) -> Bool {
+        guard allowsUnicodeEventInput(bundleIdentifier: snapshot.bundleIdentifier) else { return false }
         guard snapshot.isEditable, snapshot.isFocusedTarget else { return false }
         guard snapshot.textSource == "ax-value", snapshot.text != nil else { return false }
         guard snapshot.selectedRange != nil else { return false }
@@ -78,11 +79,13 @@ extension AXTextInjector {
         verifiedInputAvailable: Bool,
         elementIsEditable: Bool,
         targetProcessID: pid_t?,
-        frontmostProcessID: pid_t?
+        frontmostProcessID: pid_t?,
+        bundleIdentifier: String? = nil
     ) -> Bool {
         guard !verifiedInputAvailable, elementIsEditable else { return false }
         guard let targetProcessID, let frontmostProcessID else { return false }
-        return targetProcessID == frontmostProcessID
+        guard targetProcessID == frontmostProcessID else { return false }
+        return allowsUnicodeEventInput(bundleIdentifier: bundleIdentifier)
     }
 
     static func unicodeEventDispatchMethod(
@@ -190,7 +193,8 @@ extension AXTextInjector {
             verifiedInputAvailable: verifiedInputAvailable,
             elementIsEditable: elementIsEditable,
             targetProcessID: targetProcessID,
-            frontmostProcessID: frontmostProcessID()
+            frontmostProcessID: frontmostProcessID(),
+            bundleIdentifier: beforeSnapshot.bundleIdentifier
         )
         guard verifiedInputAvailable || unverifiedInputAllowed else { return false }
         let dispatchMethod = Self.unicodeEventDispatchMethod(

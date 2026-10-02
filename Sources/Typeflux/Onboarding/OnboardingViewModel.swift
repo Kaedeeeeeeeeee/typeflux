@@ -242,6 +242,8 @@ final class OnboardingViewModel: ObservableObject {
 
     var isLLMConfigurationComplete: Bool {
         switch llmProvider {
+        case .disabled:
+            true
         case .ollama:
             hasText(ollamaBaseURL) && hasText(ollamaModel)
         case .appleFoundationModel:
@@ -328,6 +330,11 @@ final class OnboardingViewModel: ObservableObject {
 
     func selectOllama() {
         llmProvider = .ollama
+        llmConnectionTestState = .idle
+    }
+
+    func selectDisabledLLM() {
+        llmProvider = .disabled
         llmConnectionTestState = .idle
     }
 
@@ -477,7 +484,9 @@ final class OnboardingViewModel: ObservableObject {
             let start = Date()
             do {
                 let preview = try await ConnectionTestSupport.runWithTimeout {
-                    if provider == .ollama {
+                    if provider == .disabled {
+                        throw LLMConfigurationError.notConfigured(reason: .disabled)
+                    } else if provider == .ollama {
                         guard let base = URL(string: ollamaURL) else {
                             throw NSError(
                                 domain: "LLMTest",

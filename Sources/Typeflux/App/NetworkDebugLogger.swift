@@ -14,7 +14,7 @@ enum NetworkDebugLogger {
         URL: \(url)
         Method: \(method)
         Headers: \(headers)
-        Body: \(bodyDescription ?? describeBody(request.httpBody))
+        Body: \(bodyDescription ?? redactedBodyDescription(request.httpBody))
         """
         logger.info("\(message, privacy: .public)")
     }
@@ -63,10 +63,8 @@ enum NetworkDebugLogger {
 
     private static func redact(headers: [String: String]) -> [String: String] {
         var redacted = headers
-        for key in headers.keys {
-            if key.caseInsensitiveCompare("Authorization") == .orderedSame {
-                redacted[key] = "<redacted>"
-            }
+        for key in headers.keys where key.caseInsensitiveCompare("Authorization") == .orderedSame {
+            redacted[key] = "<redacted>"
         }
         return redacted
     }
@@ -86,6 +84,11 @@ enum NetworkDebugLogger {
         }
 
         return "<\(data.count) bytes binary>"
+    }
+
+    private static func redactedBodyDescription(_ data: Data?) -> String {
+        guard let data, !data.isEmpty else { return "<empty>" }
+        return "<redacted request body: \(data.count) bytes>"
     }
 
     static func describe(error: Error) -> String {

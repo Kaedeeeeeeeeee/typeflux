@@ -112,6 +112,27 @@ final class AXTextInjectorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testDoesNotResolveFocusedWindowDescendantsInBrowser() {
+        XCTAssertFalse(
+            AXTextInjector.shouldResolveFocusedWindowDescendants(
+                bundleIdentifier: "com.google.Chrome"
+            )
+        )
+        XCTAssertFalse(
+            AXTextInjector.shouldResolveFocusedWindowDescendants(
+                bundleIdentifier: "org.mozilla.firefox"
+            )
+        )
+    }
+
+    func testStillResolvesFocusedWindowDescendantsInTerminal() {
+        XCTAssertTrue(
+            AXTextInjector.shouldResolveFocusedWindowDescendants(
+                bundleIdentifier: "com.apple.Terminal"
+            )
+        )
+    }
+
     func testShouldTreatEmptyValueOnGenericEditableRoleAsUnreadable() {
         let result = AXTextInjector.shouldTreatAXValueAsUnreadable(
             role: "AXGroup",
@@ -176,6 +197,38 @@ final class AXTextInjectorTests: XCTestCase {
         ])
 
         XCTAssertEqual(text, "first line")
+    }
+
+    func testBoundedWindowContextKeepsBeginningAndRecentTail() {
+        let text = "BEGIN-" + String(repeating: "x", count: 200) + "-END"
+
+        let result = AXTextInjector.boundedWindowContextText(text, limit: 80)
+
+        XCTAssertTrue(result.hasPrefix("BEGIN-"))
+        XCTAssertTrue(result.hasSuffix("-END"))
+        XCTAssertLessThanOrEqual(result.count, 80)
+        XCTAssertTrue(result.contains("earlier window content omitted"))
+    }
+
+    func testWindowContextSuppressionCoversSecureFieldsAndPasswordManagers() {
+        XCTAssertTrue(AXTextInjector.shouldSuppressWindowContext(
+            bundleIdentifier: "com.apple.Notes",
+            role: "AXTextField",
+            subrole: "AXSecureTextField",
+            windowTitle: "Sign in"
+        ))
+        XCTAssertTrue(AXTextInjector.shouldSuppressWindowContext(
+            bundleIdentifier: "com.1password.1password",
+            role: "AXWindow",
+            subrole: nil,
+            windowTitle: "1Password"
+        ))
+        XCTAssertFalse(AXTextInjector.shouldSuppressWindowContext(
+            bundleIdentifier: "com.apple.Notes",
+            role: "AXTextArea",
+            subrole: nil,
+            windowTitle: "Draft"
+        ))
     }
 
     func testFirstSessionContentsFindsNestedSublimeBufferContainingSelection() {
@@ -364,6 +417,33 @@ final class AXTextInjectorTests: XCTestCase {
 
         XCTAssertEqual(payload?.reason, "no-editable-root")
         XCTAssertNil(payload.flatMap(AXTextInjector.browserDOMContext(from:)))
+    }
+
+    func testBrowserPageContextIncludesPageURLAndVisibleText() throws {
+        let json = """
+        {
+          "ok": true,
+          "text": "draft",
+          "selectionStart": 0,
+          "selectionEnd": 0,
+          "pageTitle": "Typeflux discussion",
+          "pageURL": "https://example.com/thread/1",
+          "pageText": "Alice: Please keep the product name as Typeflux."
+        }
+        """
+
+        let payload = try XCTUnwrap(AXTextInjector.browserDOMContextPayload(fromJSON: json))
+        let context = try XCTUnwrap(AXTextInjector.browserPageContext(from: payload))
+
+        XCTAssertEqual(context.title, "Typeflux discussion")
+        XCTAssertTrue(context.text.contains("Page URL: https://example.com/thread/1"))
+        XCTAssertTrue(context.text.contains("product name as Typeflux"))
+    }
+
+    func testBrowserDOMScriptSuppressesActivePasswordFields() {
+        XCTAssertTrue(AXTextInjector.browserDOMContextJavaScript.contains("sensitive-field"))
+        XCTAssertFalse(AXTextInjector.browserDOMContextJavaScript
+            .contains("email|password|number"))
     }
 
     func testBrowserAXValuePolicyPrefersDOMBeforeChromeAddressField() {
@@ -560,6 +640,28 @@ final class AXTextInjectorTests: XCTestCase {
         )
     }
 
+    func testCannotUseVerifiedUnicodeInputForTerminal() {
+        let snapshot = CurrentInputTextSnapshot(
+            processID: 42,
+            processName: "Terminal",
+            bundleIdentifier: "com.apple.Terminal",
+            role: "AXTextArea",
+            text: "prompt",
+            selectedRange: CFRange(location: 6, length: 0),
+            isEditable: true,
+            isFocusedTarget: true,
+            failureReason: nil,
+            textSource: "ax-value"
+        )
+
+        XCTAssertFalse(
+            AXTextInjector.canUseVerifiedUnicodeInput(
+                snapshot: snapshot,
+                targetProcessID: 42
+            )
+        )
+    }
+
     func testCanUseUnverifiedUnicodeInputForFrontmostEditableTarget() {
         XCTAssertTrue(
             AXTextInjector.canUseUnverifiedUnicodeInput(
@@ -567,6 +669,30 @@ final class AXTextInjectorTests: XCTestCase {
                 elementIsEditable: true,
                 targetProcessID: 42,
                 frontmostProcessID: 42
+            )
+        )
+    }
+
+    func testCannotUseUnverifiedUnicodeInputForTerminal() {
+        XCTAssertFalse(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: false,
+                elementIsEditable: true,
+                targetProcessID: 42,
+                frontmostProcessID: 42,
+                bundleIdentifier: "com.apple.Terminal"
+            )
+        )
+    }
+
+    func testCannotUseUnverifiedUnicodeInputForBrowser() {
+        XCTAssertFalse(
+            AXTextInjector.canUseUnverifiedUnicodeInput(
+                verifiedInputAvailable: false,
+                elementIsEditable: true,
+                targetProcessID: 42,
+                frontmostProcessID: 42,
+                bundleIdentifier: "com.apple.Safari"
             )
         )
     }

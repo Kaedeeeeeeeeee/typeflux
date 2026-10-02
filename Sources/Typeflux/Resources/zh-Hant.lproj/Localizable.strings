@@ -964,8 +964,8 @@
 "settings.advanced.localSTTMemoryOptimization.title" = "記憶體優化";
 "settings.advanced.localSTTMemoryOptimization.subtitle" = "啟用後，長時間未使用的本地語音模型會自動從記憶體中卸載，以降低資源占用。再次使用時會重新載入，首次回應可能會增加 3 到 5 秒。";
 
-"settings.advanced.inputContextOptimization.title" = "使用輸入框上下文";
-"settings.advanced.inputContextOptimization.subtitle" = "暫時讀取游標附近的一小段文字，協助優化連續輸入、專有名詞與模糊詞。不會儲存到歷史記錄。";
+"settings.advanced.inputContextOptimization.title" = "使用視窗上下文";
+"settings.advanced.inputContextOptimization.subtitle" = "暫時讀取目前視窗，並在本機篩選相關文字，協助優化上下文銜接、專有名詞與模糊詞。視窗內容不會儲存到歷史記錄。";
 
 "settings.advanced.agentFramework.title" = "啟用 Agent 框架";
 "settings.advanced.agentFramework.subtitle" = "為「隨便問」功能啟用多輪 Agent 迴圈，支援工具呼叫和 MCP 伺服器整合。";
@@ -1066,3 +1066,16 @@
 "settings.models.overview.appleFoundationModel" = "使用 macOS 內置的 Apple 模型進行私密文字生成。";
 "settings.models.focused.appleFoundationModel" = "透過 Apple Foundation Models 框架在本機執行文字改寫。";
 "settings.models.routing.appleFoundationModel" = "Apple 裝置端基礎模型";
+"provider.llm.disabled" = "不使用大語言模型";
+"workflow.llmNotConfigured.disabled" = "大語言模型已停用。如需使用改寫、人設或「隨便問」，請先在模型設定中選擇一個模型。";
+"settings.models.card.disabled.summary" = "保留語音轉文字，但不向任何大語言模型傳送請求。";
+"settings.models.badge.disabled" = "關閉";
+"settings.models.disabled.speechOnly" = "僅語音轉文字";
+"settings.models.disableLLM" = "停用大語言模型";
+"settings.models.disabled.status" = "大語言模型處理已關閉。";
+"settings.models.disabled.noConfiguration" = "無需任何設定，也不會傳送大語言模型請求。Typeflux 會直接插入語音轉寫文字。";
+"settings.models.overview.disabled" = "僅使用 Typeflux 進行語音轉文字，不執行大語言模型改寫或生成。";
+"settings.models.mode.disabled" = "已關閉";
+"settings.models.disabled.noRequests" = "不會傳送任何大語言模型請求。";
+"settings.models.focused.disabled" = "保留普通聽寫，同時停用改寫、人設和「隨便問」。";
+"settings.models.routing.disabled" = "大語言模型已停用";

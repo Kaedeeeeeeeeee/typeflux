@@ -9,3 +9,6 @@ coverage.lcov
 .agents
 .github/agents/
 .n8nac/
+
+# macOS metadata
+.DS_Store

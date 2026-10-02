@@ -1099,6 +1099,8 @@ private final class WAVPersonaBenchmark {
 
     private func llmProviderDescription(settingsStore: SettingsStore) -> String {
         switch settingsStore.llmProvider {
+        case .disabled:
+            "disabled"
         case .openAICompatible:
             settingsStore.llmRemoteProvider.rawValue
         case .ollama:
@@ -1110,6 +1112,8 @@ private final class WAVPersonaBenchmark {
 
     private func llmModelDescription(settingsStore: SettingsStore) -> String {
         switch settingsStore.llmProvider {
+        case .disabled:
+            "none"
         case .openAICompatible:
             settingsStore.llmModel
         case .ollama:

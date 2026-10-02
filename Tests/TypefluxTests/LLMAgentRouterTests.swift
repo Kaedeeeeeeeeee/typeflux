@@ -95,6 +95,24 @@ final class LLMAgentRouterTests: XCTestCase {
         XCTAssertNil(ollamaSpy.lastRequest)
     }
 
+    func testDisabledProviderRejectsToolCallsWithoutCallingAService() async {
+        settings.llmProvider = .disabled
+        let request = LLMAgentRequest(systemPrompt: "sys", userPrompt: "usr", tools: [])
+
+        do {
+            let _: String = try await router.runTool(request: request, decoding: String.self)
+            XCTFail("Expected the disabled provider to reject tool calls")
+        } catch let error as LLMConfigurationError {
+            XCTAssertEqual(error, .notConfigured(reason: .disabled))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertNil(remoteSpy.lastRequest)
+        XCTAssertNil(ollamaSpy.lastRequest)
+        XCTAssertNil(appleFoundationModelSpy.lastRequest)
+    }
+
     func testOllamaAgentServiceThrowsUnsupportedProvider() async {
         let service = OllamaAgentService()
         let request = LLMAgentRequest(systemPrompt: "sys", userPrompt: "usr", tools: [])

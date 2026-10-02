@@ -84,6 +84,23 @@ final class LLMRouterTests: XCTestCase {
         XCTAssertEqual(ollamaSpy.completeCallCount, 0)
     }
 
+    func testDisabledProviderRejectsCompletionWithoutCallingAService() async {
+        settings.llmProvider = .disabled
+
+        do {
+            _ = try await router.complete(systemPrompt: "sys", userPrompt: "usr")
+            XCTFail("Expected the disabled provider to reject completion")
+        } catch let error as LLMConfigurationError {
+            XCTAssertEqual(error, .notConfigured(reason: .disabled))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(openAISpy.completeCallCount, 0)
+        XCTAssertEqual(ollamaSpy.completeCallCount, 0)
+        XCTAssertEqual(appleFoundationModelSpy.completeCallCount, 0)
+    }
+
     func testCompleteJSONRoutesToOpenAI() async throws {
         settings.llmProvider = .openAICompatible
         let schema = LLMJSONSchema(name: "test", schema: [:])

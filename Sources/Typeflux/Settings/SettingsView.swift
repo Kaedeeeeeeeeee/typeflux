@@ -1061,13 +1061,24 @@ struct StudioView: View {
                         options: personaLLMProviderOptions,
                         selection: Binding(
                             get: {
-                                viewModel.llmProvider == .ollama
-                                    ? .ollama
-                                    : viewModel.llmRemoteProvider.studioProviderID
+                                switch viewModel.llmProvider {
+                                case .disabled:
+                                    .disabledLLM
+                                case .ollama:
+                                    .ollama
+                                case .appleFoundationModel:
+                                    .appleFoundationModel
+                                case .openAICompatible:
+                                    viewModel.llmRemoteProvider.studioProviderID
+                                }
                             },
                             set: { providerID in
-                                if providerID == .ollama {
+                                if providerID == .disabledLLM {
+                                    viewModel.setLLMProvider(.disabled)
+                                } else if providerID == .ollama {
                                     viewModel.setLLMProvider(.ollama)
+                                } else if providerID == .appleFoundationModel {
+                                    viewModel.setLLMProvider(.appleFoundationModel)
                                 } else if let remoteProvider = LLMRemoteProvider.from(
                                     providerID: providerID
                                 ) {
@@ -1797,7 +1808,11 @@ struct StudioView: View {
                 (label: provider.displayName, value: provider.studioProviderID)
             }
 
-        remoteOptions.append((label: LLMProvider.ollama.displayName, value: .ollama))
+        remoteOptions.append(contentsOf: [
+            (label: LLMProvider.disabled.displayName, value: .disabledLLM),
+            (label: LLMProvider.appleFoundationModel.displayName, value: .appleFoundationModel),
+            (label: LLMProvider.ollama.displayName, value: .ollama)
+        ])
         remoteOptions.sort { lhs, rhs in
             lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
         }
@@ -4398,6 +4413,8 @@ struct StudioView: View {
             }
         case .llm:
             switch viewModel.llmProvider {
+            case .disabled:
+                .disabledLLM
             case .openAICompatible:
                 viewModel.llmRemoteProvider.studioProviderID
             case .ollama:
@@ -4555,6 +4572,19 @@ struct StudioView: View {
                 )
             }
 
+        standardCards.append((
+            name: LLMProvider.disabled.displayName,
+            card: StudioModelCard(
+                id: StudioModelProviderID.disabledLLM.rawValue,
+                name: LLMProvider.disabled.displayName,
+                summary: L("settings.models.card.disabled.summary"),
+                badge: L("settings.models.badge.disabled"),
+                metadata: L("settings.models.disabled.speechOnly"),
+                isSelected: viewModel.llmProvider == .disabled,
+                isMuted: false,
+                actionTitle: L("settings.models.disableLLM")
+            )
+        ))
         standardCards.append((
             name: LLMProvider.ollama.displayName,
             card: StudioModelCard(
@@ -4874,6 +4904,21 @@ struct StudioView: View {
     private var focusedProviderForm: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
             switch viewModel.focusedModelProvider {
+            case .disabledLLM:
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    Label(
+                        L("settings.models.disabled.status"),
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.success)
+
+                    Text(L("settings.models.disabled.noConfiguration"))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
             case .appleSpeech:
                 Text(L("settings.models.appleSpeech.quickest"))
                     .font(.studioBody(StudioTheme.Typography.caption))
@@ -5759,6 +5804,8 @@ struct StudioView: View {
 
     private func providerIsConfigured(_ provider: StudioModelProviderID) -> Bool {
         switch provider {
+        case .disabledLLM:
+            true
         case .appleSpeech:
             true
         case .localSTT:
@@ -5804,6 +5851,8 @@ struct StudioView: View {
         }
 
         switch viewModel.focusedModelProvider {
+        case .disabledLLM:
+            viewModel.setLLMProvider(.disabled)
         case .appleSpeech:
             viewModel.setSTTModelSelection(.appleSpeech, suggestedModel: viewModel.whisperModel)
         case .localSTT:
@@ -5859,6 +5908,8 @@ struct StudioView: View {
 
     private func iconName(for provider: StudioModelProviderID) -> String {
         switch provider {
+        case .disabledLLM:
+            "slash.circle"
         case .appleSpeech:
             "waveform"
         case .localSTT:
@@ -5938,6 +5989,8 @@ struct StudioView: View {
 
     private var modelOverviewSubtitle: String {
         switch activeModelProviderID {
+        case .disabledLLM:
+            L("settings.models.overview.disabled")
         case .appleSpeech:
             L("settings.models.overview.appleSpeech")
         case .localSTT:
@@ -5972,6 +6025,8 @@ struct StudioView: View {
 
     private var modelOverviewProviderPill: String {
         switch activeModelProviderID {
+        case .disabledLLM:
+            LLMProvider.disabled.displayName
         case .appleSpeech:
             STTProvider.appleSpeech.displayName
         case .localSTT:
@@ -6006,6 +6061,8 @@ struct StudioView: View {
 
     private var modelOverviewModePill: String {
         switch activeModelProviderID {
+        case .disabledLLM:
+            L("settings.models.mode.disabled")
         case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             L("settings.models.mode.local")
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
@@ -6017,6 +6074,8 @@ struct StudioView: View {
 
     private var modelOverviewModeTone: Color {
         switch activeModelProviderID {
+        case .disabledLLM:
+            StudioTheme.textSecondary
         case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             StudioTheme.success
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
@@ -6028,6 +6087,8 @@ struct StudioView: View {
 
     private var modelOverviewModeFill: Color {
         switch activeModelProviderID {
+        case .disabledLLM:
+            StudioTheme.surfaceMuted
         case .appleSpeech, .localSTT, .ollama, .appleFoundationModel:
             StudioTheme.success.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
@@ -6114,12 +6175,18 @@ struct StudioView: View {
                 ? L("settings.models.fallback.enabled") : L("settings.models.fallback.off")
         }
 
+        if activeModelProviderID == .disabledLLM {
+            return nil
+        }
+
         return providerIsConfigured(activeModelProviderID)
             ? L("settings.models.configured") : L("settings.models.needsSetup")
     }
 
     private var modelOverviewModelName: String {
         switch activeModelProviderID {
+        case .disabledLLM:
+            L("settings.models.disabled.speechOnly")
         case .appleSpeech:
             STTProvider.appleSpeech.displayName
         case .localSTT:
@@ -6160,12 +6227,18 @@ struct StudioView: View {
     }
 
     private var modelOverviewModelHint: String {
-        providerIsConfigured(activeModelProviderID)
+        if activeModelProviderID == .disabledLLM {
+            return L("settings.models.disabled.noRequests")
+        }
+
+        return providerIsConfigured(activeModelProviderID)
             ? L("settings.models.readyForUse") : L("settings.models.configurationNeeded")
     }
 
     private var focusedProviderTitle: String {
         switch viewModel.focusedModelProvider {
+        case .disabledLLM:
+            LLMProvider.disabled.displayName
         case .appleSpeech:
             STTProvider.appleSpeech.displayName
         case .localSTT:
@@ -6200,6 +6273,8 @@ struct StudioView: View {
 
     private var focusedProviderSubtitle: String {
         switch viewModel.focusedModelProvider {
+        case .disabledLLM:
+            L("settings.models.focused.disabled")
         case .appleSpeech:
             L("settings.models.focused.appleSpeech")
         case .localSTT:
@@ -6243,6 +6318,8 @@ struct StudioView: View {
 
     private var modelRoutingPrimaryValue: String {
         switch activeModelProviderID {
+        case .disabledLLM:
+            L("settings.models.routing.disabled")
         case .appleSpeech:
             L("settings.models.routing.appleSpeech")
         case .localSTT:
@@ -6280,6 +6357,10 @@ struct StudioView: View {
             return L("settings.models.routing.fallback")
         }
 
+        if activeModelProviderID == .disabledLLM {
+            return nil
+        }
+
         return activeModelProviderID == .ollama
             ? L("settings.models.routing.localSetup") : L("settings.models.routing.readiness")
     }
@@ -6289,6 +6370,10 @@ struct StudioView: View {
             return viewModel.appleSpeechFallback
                 ? L("settings.models.routing.fallbackEnabled")
                 : L("settings.models.routing.fallbackDisabled")
+        }
+
+        if activeModelProviderID == .disabledLLM {
+            return nil
         }
 
         if activeModelProviderID == .ollama {

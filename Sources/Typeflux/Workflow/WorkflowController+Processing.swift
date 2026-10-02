@@ -673,6 +673,7 @@ extension WorkflowController {
                 && (selectedText == nil || selectedText!.isEmpty)
             let hasInputContext = inputContext?.hasContent == true
             let shouldRewriteTranscript = Self.shouldRewriteTranscript(
+                llmProvider: settingsStore.llmProvider,
                 personaPrompt: personaPrompt,
                 inputContext: inputContext
             )
@@ -1553,6 +1554,15 @@ extension WorkflowController {
         inputContext: InputContextSnapshot?
     ) -> Bool {
         hasRewritePersona(personaPrompt) || inputContext?.hasContent == true
+    }
+
+    static func shouldRewriteTranscript(
+        llmProvider: LLMProvider,
+        personaPrompt: String?,
+        inputContext: InputContextSnapshot?
+    ) -> Bool {
+        guard llmProvider != .disabled else { return false }
+        return shouldRewriteTranscript(personaPrompt: personaPrompt, inputContext: inputContext)
     }
 
     func shouldTreatAsSkippedSpeechInput(error: Error, audioFile: AudioFile) -> Bool {

@@ -197,8 +197,15 @@ extension AXTextInjector {
 
     func systemFocusedElement() -> AXUIElement? {
         let system = AXUIElementCreateSystemWide()
-        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system),
-           let resolved = resolveFocusedElement(focused) {
+        if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: system) {
+            var processID: pid_t = 0
+            let bundleIdentifier = AXUIElementGetPid(focused, &processID) == .success
+                ? NSRunningApplication(processIdentifier: processID)?.bundleIdentifier
+                : nil
+            guard let resolved = resolveFocusedElement(
+                focused,
+                bundleIdentifier: bundleIdentifier
+            ) else { return nil }
             logFocusResolution(
                 context: "systemFocusedElement",
                 rootElement: focused,
@@ -212,9 +219,10 @@ extension AXTextInjector {
 
     func focusedElement(for processID: pid_t) -> AXUIElement? {
         let appElement = AXUIElementCreateApplication(processID)
+        let bundleIdentifier = NSRunningApplication(processIdentifier: processID)?.bundleIdentifier
 
         if let focused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focused) {
+           let resolved = resolveFocusedElement(focused, bundleIdentifier: bundleIdentifier) {
             logFocusResolution(
                 context: "focusedElement(appFocusedUIElement)",
                 rootElement: focused,
@@ -224,7 +232,7 @@ extension AXTextInjector {
         }
 
         if let focusedWindow = copyElementAttribute(kAXFocusedWindowAttribute as String, from: appElement),
-           let resolved = resolveFocusedElement(focusedWindow) {
+           let resolved = resolveFocusedElement(focusedWindow, bundleIdentifier: bundleIdentifier) {
             logFocusResolution(
                 context: "focusedElement(focusedWindow)",
                 rootElement: focusedWindow,
@@ -367,6 +375,9 @@ extension AXTextInjector {
         switch role {
         case "AXStaticText":
             [kAXValueAttribute as String, kAXDescriptionAttribute as String, kAXTitleAttribute as String]
+        case "AXButton", "AXCheckBox", "AXHeading", "AXImage", "AXLink", "AXMenuItem",
+             "AXPopUpButton", "AXRadioButton", "AXTab", "AXCell":
+            [kAXTitleAttribute as String, kAXDescriptionAttribute as String, kAXValueAttribute as String]
         case "AXTextArea", "AXTextField", "AXGroup", "AXWebArea", "AXUnknown":
             [kAXValueAttribute as String]
         default:
@@ -405,10 +416,91 @@ extension AXTextInjector {
         return lines.joined(separator: "\n")
     }
 
+    func captureWindowContext(_ request: WindowContextCaptureRequest) -> WindowContextCapture? {
+        let role = copyStringAttribute(kAXRoleAttribute as String, from: request.element)
+        let subrole = copyStringAttribute(kAXSubroleAttribute as String, from: request.element)
+        guard !Self.shouldSuppressWindowContext(
+            bundleIdentifier: request.bundleIdentifier,
+            role: role,
+            subrole: subrole,
+            windowTitle: request.windowTitle
+        ) else {
+            return nil
+        }
+
+        if let browserPayload = request.browserPayload,
+           let pageContext = Self.browserPageContext(from: browserPayload) {
+            return WindowContextCapture(
+                title: pageContext.title ?? request.windowTitle,
+                text: Self.boundedWindowContextText(pageContext.text),
+                source: "browser-dom"
+            )
+        }
+
+        if let documentURL = request.documentURL,
+           let documentText = readDocumentContextText(from: documentURL),
+           !documentText.isEmpty {
+            return WindowContextCapture(
+                title: request.windowTitle,
+                text: Self.boundedWindowContextText(documentText),
+                source: "document"
+            )
+        }
+
+        guard let visibleText = visibleTextContext(for: request.element, processID: request.processID),
+              !visibleText.isEmpty
+        else {
+            return nil
+        }
+        return WindowContextCapture(
+            title: request.windowTitle,
+            text: Self.boundedWindowContextText(visibleText),
+            source: "accessibility-window"
+        )
+    }
+
+    static func boundedWindowContextText(_ text: String, limit: Int = windowContextMaxCharacters) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard limit > 0, trimmed.count > limit else { return limit > 0 ? trimmed : "" }
+
+        let headCount = max(limit / 5, 1)
+        let marker = "\n[... earlier window content omitted ...]\n"
+        let tailCount = max(limit - headCount - marker.count, 0)
+        return String(trimmed.prefix(headCount)) + marker + String(trimmed.suffix(tailCount))
+    }
+
+    static func shouldSuppressWindowContext(
+        bundleIdentifier: String?,
+        role: String?,
+        subrole: String?,
+        windowTitle: String?
+    ) -> Bool {
+        if role == "AXSecureTextField" || subrole == "AXSecureTextField" {
+            return true
+        }
+
+        let sensitiveBundleIdentifiers: Set<String> = [
+            "com.apple.Passwords",
+            "com.apple.keychainaccess",
+            "com.1password.1password",
+            "com.bitwarden.desktop",
+            "com.dashlane.Dashlane"
+        ]
+        if let bundleIdentifier, sensitiveBundleIdentifiers.contains(bundleIdentifier) {
+            return true
+        }
+
+        let normalizedTitle = windowTitle?.lowercased() ?? ""
+        return ["incognito", "private browsing", "无痕", "無痕", "シークレット"]
+            .contains { normalizedTitle.contains($0) }
+    }
+
     func applicationStateContext(
         bundleIdentifier: String?,
         selectedText: String?,
-        windowTitle: String?
+        windowTitle: String?,
+        browserPayload: BrowserDOMContextPayload? = nil,
+        browserPayloadWasCaptured: Bool = false
     ) -> ApplicationStateContext? {
         lastApplicationStateFailureReason = nil
 
@@ -424,11 +516,25 @@ extension AXTextInjector {
                 windowTitle: windowTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
             )
         default:
+            guard Self.browserAutomationKind(for: bundleIdentifier) != nil else { return nil }
+            if browserPayloadWasCaptured {
+                return browserPayload.flatMap(Self.browserDOMContext(from:))
+            }
+            if let browserPayload {
+                return Self.browserDOMContext(from: browserPayload)
+            }
             return browserDOMContext(bundleIdentifier: bundleIdentifier)
         }
     }
 
     func browserDOMContext(bundleIdentifier: String?) -> ApplicationStateContext? {
+        guard let payload = captureBrowserDOMContextPayload(bundleIdentifier: bundleIdentifier) else {
+            return nil
+        }
+        return Self.browserDOMContext(from: payload)
+    }
+
+    func captureBrowserDOMContextPayload(bundleIdentifier: String?) -> BrowserDOMContextPayload? {
         guard let kind = Self.browserAutomationKind(for: bundleIdentifier) else { return nil }
         let script = Self.browserDOMContextAppleScript(
             bundleIdentifier: kind.bundleIdentifier,
@@ -441,15 +547,23 @@ extension AXTextInjector {
         }
 
         let payload = Self.browserDOMContextPayload(fromJSON: output)
-        guard let payload, let context = Self.browserDOMContext(from: payload) else {
-            lastApplicationStateFailureReason = payload?.reason.map { "browser-dom-\($0)" }
-                ?? "browser-dom-invalid-response"
-            NetworkDebugLogger.logMessage("[InputContext] browser DOM context invalid response: \(output.prefix(200))")
+        guard let payload else {
+            lastApplicationStateFailureReason = "browser-dom-invalid-response"
+            NetworkDebugLogger.logMessage("[InputContext] browser DOM context returned an invalid payload")
             return nil
+        }
+        guard payload.ok else {
+            lastApplicationStateFailureReason = payload.reason.map { "browser-dom-\($0)" }
+                ?? "browser-dom-invalid-response"
+            NetworkDebugLogger.logMessage(
+                "[InputContext] browser DOM context unavailable: \(payload.reason ?? "unknown")"
+            )
+            let pageText = payload.pageText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return pageText.isEmpty ? nil : payload
         }
 
         lastApplicationStateFailureReason = nil
-        return context
+        return payload
     }
 
     func executeAppleScript(_ source: String) -> String? {
@@ -612,6 +726,30 @@ extension AXTextInjector {
         let text: String
         let selectionStart: Int
         let selectionEnd: Int
+        let pageTitle: String?
+        let pageURL: String?
+        let pageText: String?
+    }
+
+    struct BrowserPageContext: Equatable {
+        let title: String?
+        let text: String
+    }
+
+    static func browserPageContext(from payload: BrowserDOMContextPayload) -> BrowserPageContext? {
+        let pageText = payload.pageText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !pageText.isEmpty else { return nil }
+
+        var sections: [String] = []
+        if let pageURL = payload.pageURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !pageURL.isEmpty {
+            sections.append("Page URL: \(pageURL)")
+        }
+        sections.append(pageText)
+        return BrowserPageContext(
+            title: payload.pageTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
+            text: sections.joined(separator: "\n")
+        )
     }
 
     static let browserDOMContextJavaScript = """
@@ -620,13 +758,27 @@ extension AXTextInjector {
         return JSON.stringify(payload);
       }
 
+      function boundedPageText() {
+        var text = document.body ? (document.body.innerText || document.body.textContent || "") : "";
+        var limit = 120000;
+        if (text.length <= limit) return text;
+        return text.slice(0, 24000) + "\n[... earlier page content omitted ...]\n" + text.slice(-(limit - 24050));
+      }
+
+      function result(payload) {
+        payload.pageTitle = document.title || "";
+        payload.pageURL = window.location ? window.location.href : "";
+        payload.pageText = boundedPageText();
+        return json(payload);
+      }
+
       function empty(reason) {
-        return json({ ok: false, reason: reason, text: "", selectionStart: 0, selectionEnd: 0 });
+        return result({ ok: false, reason: reason, text: "", selectionStart: 0, selectionEnd: 0 });
       }
 
       function inputSupportsTextSelection(element) {
         if (!element || element.tagName !== "INPUT") return false;
-        return /^(text|search|url|tel|email|password|number)$/i.test(element.type || "text");
+        return /^(text|search|url|tel|email|number)$/i.test(element.type || "text");
       }
 
       function textNodeOffset(root, targetNode, targetOffset) {
@@ -650,8 +802,20 @@ extension AXTextInjector {
       }
 
       var active = document.activeElement;
-      if (active && active.tagName === "TEXTAREA") {
+      if (active && active.tagName === "INPUT" && /password/i.test(active.type || "")) {
         return json({
+          ok: false,
+          reason: "sensitive-field",
+          text: "",
+          selectionStart: 0,
+          selectionEnd: 0,
+          pageTitle: "",
+          pageURL: "",
+          pageText: ""
+        });
+      }
+      if (active && active.tagName === "TEXTAREA") {
+        return result({
           ok: true,
           kind: "textarea",
           text: active.value || "",
@@ -661,7 +825,7 @@ extension AXTextInjector {
       }
 
       if (inputSupportsTextSelection(active)) {
-        return json({
+        return result({
           ok: true,
           kind: "input",
           text: active.value || "",
@@ -682,7 +846,7 @@ extension AXTextInjector {
         end = textNodeOffset(root, selection.focusNode, selection.focusOffset);
       }
 
-      return json({
+      return result({
         ok: true,
         kind: "contenteditable",
         text: text,
@@ -1061,16 +1225,31 @@ extension AXTextInjector {
         return nil
     }
 
-    func resolveFocusedElement(_ element: AXUIElement) -> AXUIElement? {
+    func resolveFocusedElement(
+        _ element: AXUIElement,
+        bundleIdentifier: String? = nil
+    ) -> AXUIElement? {
         let role = copyStringAttribute(kAXRoleAttribute as String, from: element)
 
         if role != "AXWindow" {
             return element
         }
 
+        guard Self.shouldResolveFocusedWindowDescendants(
+            bundleIdentifier: bundleIdentifier
+        ) else {
+            NetworkDebugLogger.logMessage(
+                "[Focus Resolution] preserving browser window focus instead of guessing a descendant"
+            )
+            return element
+        }
+
         if let nestedFocused = copyElementAttribute(kAXFocusedUIElementAttribute as String, from: element),
            nestedFocused != element,
-           let resolved = resolveFocusedElement(nestedFocused) {
+           let resolved = resolveFocusedElement(
+               nestedFocused,
+               bundleIdentifier: bundleIdentifier
+           ) {
             return resolved
         }
 

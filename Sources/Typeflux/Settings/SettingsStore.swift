@@ -701,6 +701,8 @@ final class SettingsStore {
     /// Used to drive first-run smart defaults such as auto-selecting the built-in persona.
     var isLLMConfigured: Bool {
         switch llmProvider {
+        case .disabled:
+            return false
         case .appleFoundationModel:
             return true
         case .ollama:

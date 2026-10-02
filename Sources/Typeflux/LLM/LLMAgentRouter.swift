@@ -20,6 +20,8 @@ final class LLMAgentRouter: LLMAgentService {
 
     func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {
         switch settingsStore.llmProvider {
+        case .disabled:
+            throw LLMConfigurationError.notConfigured(reason: .disabled)
         case .openAICompatible:
             try await remote.runTool(request: request, decoding: type)
         case .ollama:

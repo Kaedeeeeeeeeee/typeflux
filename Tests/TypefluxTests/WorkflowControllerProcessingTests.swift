@@ -141,6 +141,25 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(WorkflowController.shouldRewriteTranscript(personaPrompt: nil, inputContext: nil))
     }
 
+    func testDisabledLLMBypassesRewriteEvenWithPersonaAndInputContext() {
+        let inputContext = InputContextSnapshot(
+            appName: "Zed",
+            bundleIdentifier: "dev.zed.Zed",
+            role: "AXWindow",
+            isEditable: false,
+            isFocusedTarget: true,
+            prefix: "Existing text",
+            suffix: "",
+            selectedText: nil
+        )
+
+        XCTAssertFalse(WorkflowController.shouldRewriteTranscript(
+            llmProvider: .disabled,
+            personaPrompt: "Make it concise",
+            inputContext: inputContext
+        ))
+    }
+
     func testQuickInputOnlyAppliesToHoldToTalkDictation() {
         let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.quickInputEnabled = true

@@ -115,6 +115,7 @@ final class AppPreferencesTests: XCTestCase {
     // MARK: - LLMProvider
 
     func testLLMProviderRawValues() {
+        XCTAssertEqual(LLMProvider.disabled.rawValue, "disabled")
         XCTAssertEqual(LLMProvider.openAICompatible.rawValue, "openAICompatible")
         XCTAssertEqual(LLMProvider.ollama.rawValue, "ollama")
         XCTAssertEqual(LLMProvider.appleFoundationModel.rawValue, "appleFoundationModel")

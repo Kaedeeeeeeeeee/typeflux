@@ -129,8 +129,8 @@ final class StudioModelsTests: XCTestCase {
 
     func testLLMProvidersDomain() {
         let llmProviders: [StudioModelProviderID] = [
-            .appleFoundationModel, .ollama, .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini,
-            .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi
+            .disabledLLM, .appleFoundationModel, .ollama, .freeModel, .customLLM, .openRouter, .openAI,
+            .anthropic, .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .xiaomi
         ]
         for provider in llmProviders {
             XCTAssertEqual(provider.domain, .llm, "\(provider) should be in LLM domain")

@@ -400,6 +400,11 @@ struct OnboardingView: View {
                                 )
                             } + [
                                 (
+                                    title: LLMProvider.disabled.displayName,
+                                    providerID: StudioModelProviderID.disabledLLM,
+                                    remoteProvider: nil
+                                ),
+                                (
                                     title: LLMProvider.appleFoundationModel.displayName,
                                     providerID: StudioModelProviderID.appleFoundationModel,
                                     remoteProvider: nil
@@ -433,6 +438,18 @@ struct OnboardingView: View {
                             ) {
                                 withAnimation(.easeOut(duration: 0.18)) {
                                     viewModel.selectLLMRemoteProvider(provider)
+                                }
+                            }
+                        } else if option.providerID == .disabledLLM {
+                            modelProviderCard(
+                                providerID: .disabledLLM,
+                                title: L("provider.llm.disabled"),
+                                description: L("settings.models.card.disabled.summary"),
+                                badge: L("settings.models.badge.disabled"),
+                                isSelected: viewModel.llmProvider == .disabled
+                            ) {
+                                withAnimation(.easeOut(duration: 0.18)) {
+                                    viewModel.selectDisabledLLM()
                                 }
                             }
                         } else if option.providerID == .ollama {
@@ -990,7 +1007,24 @@ struct OnboardingView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             Group {
-                if viewModel.llmProvider == .ollama {
+                if viewModel.llmProvider == .disabled {
+                    onboardingConfigCard {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(
+                                L("settings.models.disabled.status"),
+                                systemImage: "checkmark.circle.fill"
+                            )
+                            .font(.studioBody(12, weight: .semibold))
+                            .foregroundStyle(StudioTheme.success)
+
+                            Text(L("settings.models.disabled.noConfiguration"))
+                                .font(.studioBody(12))
+                                .foregroundStyle(onboardingSecondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else if viewModel.llmProvider == .ollama {
                     ollamaConfigFields
                 } else if viewModel.llmProvider == .appleFoundationModel {
                     onboardingConfigCard {
@@ -1132,6 +1166,10 @@ struct OnboardingView: View {
     }
 
     private var llmProviderSupportsTest: Bool {
+        if viewModel.llmProvider == .disabled {
+            return false
+        }
+
         if viewModel.llmProvider == .ollama || viewModel.llmProvider == .appleFoundationModel {
             return true
         }
@@ -1146,6 +1184,8 @@ struct OnboardingView: View {
 
     private var llmProviderTitle: String {
         switch viewModel.llmProvider {
+        case .disabled:
+            L("provider.llm.disabled")
         case .openAICompatible:
             viewModel.llmRemoteProvider.displayName
         case .ollama:
@@ -1157,6 +1197,8 @@ struct OnboardingView: View {
 
     private var llmProviderSummary: String {
         switch viewModel.llmProvider {
+        case .disabled:
+            L("settings.models.card.disabled.summary")
         case .openAICompatible:
             L("settings.models.card.\(viewModel.llmRemoteProvider.rawValue).summary")
         case .ollama:
@@ -1245,7 +1287,7 @@ struct OnboardingView: View {
 
     private func providerLogoResourceName(for providerID: StudioModelProviderID) -> String? {
         switch providerID {
-        case .freeSTT, .appleFoundationModel: nil
+        case .freeSTT, .disabledLLM, .appleFoundationModel: nil
         case .whisperAPI, .multimodalLLM: "openai"
         case .ollama: "ollama"
         case .freeModel: nil
@@ -1272,6 +1314,7 @@ struct OnboardingView: View {
 
     private func providerSymbol(for providerID: StudioModelProviderID) -> String {
         switch providerID {
+        case .disabledLLM: "slash.circle"
         case .appleSpeech: "waveform"
         case .localSTT: "laptopcomputer.and.arrow.down"
         case .freeSTT: "giftcard"
